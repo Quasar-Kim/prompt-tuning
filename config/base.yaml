@@ -1,0 +1,7 @@
+# lightning.pytorch==2.0.1.post0
+seed_everything: 42
+trainer:
+  logger:
+    class_path: WandbLogger
+    init_args:
+      project: khs-ket5

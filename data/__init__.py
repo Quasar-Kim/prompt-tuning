@@ -1,0 +1,1 @@
+from .khs import KHSDataModule
