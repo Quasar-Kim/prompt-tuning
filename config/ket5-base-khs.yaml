@@ -4,7 +4,7 @@ experiment:
   task: khs
   model: keT5Base
   pad_to: 128
-  batch_size: 32
+  batch_size: 16
   is_gpu: True
   hp:
     lr: 1e-4
