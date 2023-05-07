@@ -2,12 +2,9 @@ from functools import partial
 import torch
 from torch import optim
 from torch.optim.lr_scheduler import LambdaLR
-import torch.nn.functional as F
-from lightning.pytorch import LightningModule
-from torchmetrics import Metric
 from transformers import T5ForConditionalGeneration
 from local_types import *
-from local_types import EncDecLabeledSample, ModelStepOutputs
+from local_types import EncDecLabeledSample, ModelStepOutput
 from .base import LightningModuleWithMetrics
 
 def inv_sqrt_lambda(epoch, warmup_epochs):
@@ -33,15 +30,18 @@ class KeT5(LightningModuleWithMetrics):
             labels=sample['y']
         )
 
-    def training_step(self, batch: EncDecLabeledSample, batch_idx) -> ModelStepOutputs:
+    def training_step(self, batch: EncDecLabeledSample, batch_idx) -> ModelStepOutput:
         return self._step(batch)
     
-    def validation_step(self, batch: EncDecLabeledSample, batch_idx) -> ModelStepOutputs:
+    def validation_step(self, batch: EncDecLabeledSample, batch_idx) -> ModelStepOutput:
         return self._step(batch)
     
-    def _step(self, batch: EncDecLabeledSample) -> ModelStepOutputs:
+    def _step(self, batch: EncDecLabeledSample) -> ModelStepOutput:
         output = self(batch)
-        return {'loss': output.loss, 'logits': output.logits}
+        ret = {'loss': output.loss, 'logits': output.logits}
+        if 'cls_y' in batch:
+            ret['cls_y'] = batch['cls_y']
+        return ret
     
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.hparams.lr)

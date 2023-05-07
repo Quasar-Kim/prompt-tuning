@@ -46,9 +46,15 @@ class KHSDataModule(LightningDataModule):
                 'offensive': '공격적',
                 'none': '중립'
             }
+            cls_y_mapping = {
+                'hate': 2,
+                'offensive': 1,
+                'none': 0
+            }
             return {
                 'x': sample['x'],
-                'y': mapping[sample['y']]
+                'y': mapping[sample['y']],
+                'cls_y': cls_y_mapping[sample['y']]
             }
 
         pipe = ParquetFileLoader(parquet_file)

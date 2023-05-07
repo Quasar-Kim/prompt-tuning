@@ -4,6 +4,7 @@ import model
 import data
 import tokenizer
 import torchmetrics
+import metrics
 
 if __name__ == '__main__':
     warnings.filterwarnings('ignore', r'.*does not have many workers.*')

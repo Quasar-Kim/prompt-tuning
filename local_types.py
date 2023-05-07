@@ -16,7 +16,7 @@ class EncDecUnlabeledSample(TypedDict):
 
 class EncDecLabeledSample(EncDecUnlabeledSample):
     y: torch.Tensor
-    actual_y_len: torch.Tensor # special token을 모두 제거했을때 y의 길이
+
 
 class TokenizerEncoding(TypedDict):
     input_ids: list[int]
@@ -57,11 +57,20 @@ class FeatureConverter(Protocol):
     def convert(self, sample: TextTrainSample | TextInferenceSample):
         pass
 
-class ModelStepOutputs(TypedDict):
+class ModelStepOutput(TypedDict):
     loss: torch.Tensor
-    preds: NotRequired[torch.Tensor]
-    labels: NotRequired[torch.Tensor]
+    logits: torch.Tensor
+
+class ModelStepOutputForClassification(ModelStepOutput):
+    loss: torch.Tensor
+    logits: torch.Tensor
+    cls_y: torch.Tensor
 
 class PostProcessor(Protocol):
-    def __call__(self, outputs, batch) -> dict:
+    def __call__(self, output: ModelStepOutput) -> dict:
         pass
+
+class ModelOutputForClassification(TypedDict):
+    loss: torch.Tensor
+    preds: torch.Tensor
+    cls_y: torch.Tensor

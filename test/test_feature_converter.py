@@ -22,7 +22,6 @@ class TestEncDecFeatureConverter:
         assert converted['dec_x'].tolist() == [tokenizer.bos_token_id] + encoded_y['input_ids']
         assert converted['dec_attention_mask'].tolist() == [1] + encoded_y['attention_mask']
         assert converted['y'].tolist() == encoded_y['input_ids'] + [tokenizer.pad_token_id]
-        assert converted['actual_y_len'].item() == len(encoded_y['input_ids']) - 1
 
     def test_with_padding(self):
         sample = {
@@ -41,4 +40,29 @@ class TestEncDecFeatureConverter:
         assert converted['dec_x'].tolist() == pad([tokenizer.bos_token_id] + encoded_y['input_ids'], pad_to)
         assert converted['dec_attention_mask'].tolist() == pad([1] + encoded_y['attention_mask'], pad_to)
         assert converted['y'].tolist() == pad(encoded_y['input_ids'] + [tokenizer.pad_token_id], pad_to)
-        assert converted['actual_y_len'].item() == len(encoded_y['input_ids']) - 1
+
+    def test_extra_key_scalar(self):
+        sample = {
+            'x': '안녕하세요?',
+            'y': 'hello?',
+            'extra_key': 1
+        }
+        pad_to = 10
+        converter = EncDecFeatureConverter()
+        converter.tokenizer = tokenizer
+        converter.pad_to = pad_to
+        converted = converter.convert(sample)
+        assert converted['extra_key'].tolist() == 1
+
+    def test_extra_key_list(self):
+        sample = {
+            'x': '안녕하세요?',
+            'y': 'hello?',
+            'extra_key': [1, 2, 3]
+        }
+        pad_to = 10
+        converter = EncDecFeatureConverter()
+        converter.tokenizer = tokenizer
+        converter.pad_to = pad_to
+        converted = converter.convert(sample)
+        assert converted['extra_key'].tolist() == [1, 2, 3]
