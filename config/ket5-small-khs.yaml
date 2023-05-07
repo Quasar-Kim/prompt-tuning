@@ -1,0 +1,12 @@
+trainer:
+  max_epochs: 50
+  check_val_every_n_epoch: 5
+experiment:
+  task: khs
+  model: keT5Small
+  pad_to: 128
+  batch_size: 32
+  is_gpu: True
+  hp:
+    lr: 1e-4
+    num_warmup_epochs: 5

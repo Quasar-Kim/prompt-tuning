@@ -1,31 +1,12 @@
 trainer:
   accelerator: cpu
-  fast_dev_run: true
-  logger:
-    init_args:
-      offline: true
-model:
-  class_path: model.KeT5Small
-  init_args:
+  fast_dev_run: True
+experiment:
+  task: khs
+  model: keT5Small
+  pad_to: 128
+  batch_size: 2
+  is_gpu: False
+  hp:
     lr: 1e-4
     num_warmup_epochs: 10
-    tokenizer:
-      class_path: tokenizer.KeT5Tokenizer
-    metrics:
-      accuracy:
-        class_path: metrics.NaiveAccuracy
-    postprocessor:
-      class_path: data.ClassificationPostProcessor
-      init_args:
-        mapping:
-          혐오: 2
-          공격적: 1
-          중립: 0
-data:
-  class_path: data.KHSDataModule
-  init_args:
-    batch_size: 2
-    tokenizer:
-      class_path: tokenizer.KeT5Tokenizer
-    feature_converter:
-      class_path: data.EncDecFeatureConverter

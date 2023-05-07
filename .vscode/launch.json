@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
-            "args": ["fit", "--config", "config/base.yaml", "--config", "config/dev.yaml"],
+            "args": ["--config", "config/wish.yaml"],
             "justMyCode": false
         },
         {

@@ -32,7 +32,7 @@ class BaseLightningModule(LightningModule):
         self.postprocessor = postprocessor
         self.metrics = metrics if metrics is not None else []
         self.config = config
-        self.hp = config['hparams'] if 'hparams' in config else {}
+        self.hp = config['hp'] if 'hp' in config else {}
         self._configured = True
 
     def training_step(self, batch, batch_idx):
