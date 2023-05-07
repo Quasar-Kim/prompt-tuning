@@ -1,6 +1,5 @@
 trainer:
   max_epochs: 50
-  check_val_every_n_epoch: 5
 experiment:
   task: khs
   model: keT5Small

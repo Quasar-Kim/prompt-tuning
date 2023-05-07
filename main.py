@@ -10,7 +10,7 @@ class MyCLI(LightningCLI):
 
 
 def cli_main():
-    cli = MyCLI(DemoModel, BoringDataModule, run=False)
+    cli = MyCLI(DemoModel, BoringDataModule, save_config_kwargs={'overwrite': True}, run=False)
     cfg = cli.config['experiment']
     task = getattr(tasks, cfg.pop('task'))
     model = getattr(models, cfg.pop('model'))

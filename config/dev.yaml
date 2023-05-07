@@ -1,6 +1,8 @@
 trainer:
   accelerator: cpu
-  fast_dev_run: True
+  logger:
+    init_args:
+      offline: True
 experiment:
   task: khs
   model: keT5Small
