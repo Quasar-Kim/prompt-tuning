@@ -8,7 +8,7 @@ class MyCLI(LightningCLI):
     def add_arguments_to_parser(self, parser: LightningArgumentParser):
         parser.add_argument('--experiment')
 
-
+# TODO: allow experiment to be configurable
 def cli_main():
     cli = MyCLI(DemoModel, BoringDataModule, save_config_kwargs={'overwrite': True}, run=False)
     cfg = cli.config['experiment']
