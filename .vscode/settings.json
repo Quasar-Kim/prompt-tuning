@@ -2,5 +2,6 @@
     "cSpell.words": [
         "datapipes",
         "torchdata"
-    ]
+    ],
+    "python.analysis.typeCheckingMode": "basic"
 }

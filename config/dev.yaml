@@ -4,11 +4,6 @@ trainer:
   logger:
     init_args:
       offline: true
-  callbacks:
-    - class_path: ModelCheckpoint
-      init_args:
-        every_n_epochs: 5
-        filename: "{epoch}"
 model:
   class_path: model.KeT5Small
   init_args:

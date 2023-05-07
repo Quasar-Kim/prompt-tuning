@@ -1,0 +1,13 @@
+# lightning.pytorch==2.0.1.post0
+seed_everything: 42
+trainer:
+  fast_dev_run: True
+experiment:
+  task: tasks.khs
+  model: models.keT5Small
+  pad_to: 128
+  batch_size: 32
+  is_gpu: False
+  hparams:
+    - lr: 1e-4
+    - num_warmup_epochs: 10

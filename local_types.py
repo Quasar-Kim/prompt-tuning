@@ -1,28 +1,14 @@
-from typing import Protocol, TypedDict, runtime_checkable
-from typing_extensions import NotRequired
+from __future__ import annotations
+from typing import Protocol, NamedTuple, TypedDict, Type
 import torch
+from torchdata.datapipes import iter as iterpipes
+from lightning.pytorch import LightningDataModule
 
-class TextInferenceSample(TypedDict):
-    x: str
-
-class TextTrainSample(TextInferenceSample):
-    y: str
-
-class EncDecUnlabeledSample(TypedDict):
-    enc_x: torch.Tensor
-    enc_attention_mask: NotRequired[torch.Tensor]
-    enc_x_len: torch.Tensor
-    dec_attention_mask: NotRequired[torch.Tensor]
-
-class EncDecLabeledSample(EncDecUnlabeledSample):
-    y: torch.Tensor
-
-
-class TokenizerEncoding(TypedDict):
+class TokenizerEncoding(NamedTuple):
     input_ids: list[int]
     attention_mask: list[int]
 
-class BatchTokenizerEncoding(TypedDict):
+class BatchTokenizerEncoding(NamedTuple):
     input_ids: list[list[int]]
     attention_mask: list[list[int]]
 
@@ -37,40 +23,67 @@ class Tokenizer(Protocol):
     unk_token_id: int | None
 
     def encode(self, text: str, pad_to: int | None = None, **kwargs) -> TokenizerEncoding:
-        pass
+        ...
 
     def encode_batch(self, batch: list[str], pad_to: int | None = None, **kwargs) -> BatchTokenizerEncoding:
-        pass
+        ...
 
     def decode(self, token_ids: list[int], remove_special_tokens: bool = False, **kwargs) -> str:
-        pass
+        ...
 
     def decode_batch(self, batch_token_ids: list[list[int]], remove_special_tokens: bool = False, **kwargs) -> list[str]:
-        pass
+        ...
 
-class FeatureConverter(Protocol):
-    tokenizer: Tokenizer
-    
-    def __init__(self, tokenizer):
-        pass
-    
-    def convert(self, sample: TextTrainSample | TextInferenceSample):
-        pass
+class EncDecSample(TypedDict):
+    enc_x: torch.Tensor
+    enc_attention_mask: torch.Tensor
+    dec_x: torch.Tensor
+    dec_attention_mask: torch.Tensor
+    y: torch.Tensor
+
+class DecSample(TypedDict):
+    ...
+
+Sample = EncDecSample | DecSample
+
+class DetokenizedOutput(TypedDict):
+    y: list[str]
+    y_pred: list[str]
+
+class PostProcessor(Protocol):
+    def __call__(self, y_or_y_pred: str, tokenizer: Tokenizer) -> int:
+        ...
+
+class Metric(Protocol):
+    name: str
+    reduce_fx: str
+
+    def __call__(self, y: torch.Tensor, y_pred: torch.Tensor) -> torch.Tensor:
+        ...
+
+class DataPipe(Protocol):
+    def __call__(self, dp: iterpipes.IterDataPipe, dm: LightningDataModule) -> iterpipes.IterDataPipe:
+        ...
+
+class Task(NamedTuple):
+    name: str
+    source: dict[str, iterpipes.IterDataPipe]
+    pipes: list
+    postprocessor: PostProcessor | None
+    metrics: list[Metric] | None
+
+class Model(NamedTuple):
+    feature_converter: Type[DataPipe]
+    module: Type[LightningDataModule]
+    tokenizer: Type[Tokenizer]
 
 class ModelStepOutput(TypedDict):
     loss: torch.Tensor
-    logits: torch.Tensor
+    y: torch.Tensor
+    y_pred: torch.Tensor
 
-class ModelStepOutputForClassification(ModelStepOutput):
-    loss: torch.Tensor
-    logits: torch.Tensor
-    cls_y: torch.Tensor
-
-class PostProcessor(Protocol):
-    def __call__(self, output: ModelStepOutput) -> dict:
-        pass
-
-class ModelOutputForClassification(TypedDict):
-    loss: torch.Tensor
-    preds: torch.Tensor
-    cls_y: torch.Tensor
+class FeatureConverterInput(TypedDict):
+    x: list[int]
+    x_attention_mask: list[int]
+    y: list[int]
+    y_attention_mask: list[int]
