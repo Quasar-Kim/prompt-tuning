@@ -13,10 +13,10 @@ def inv_sqrt_lambda(epoch, warmup_epochs):
         return epoch / warmup_epochs
     return (epoch ** -0.5) * (warmup_epochs ** 0.5)
 
-class KeT5SmallModule(BaseLightningModule):
-    def __init__(self):
+class KeT5Module(BaseLightningModule):
+    def __init__(self, model_name: str):
         super().__init__()
-        self.module = T5ForConditionalGeneration.from_pretrained('KETI-AIR/ke-t5-small')
+        self.module = T5ForConditionalGeneration.from_pretrained(model_name)
     
     def forward(self, batch: EncDecSample):
         return self.module(
@@ -37,8 +37,33 @@ class KeT5SmallModule(BaseLightningModule):
         lr_scheduler = LambdaLR(optimizer, lr_lambda=partial(inv_sqrt_lambda, warmup_epochs=self.hp['num_warmup_epochs']))
         return { 'optimizer': optimizer, 'lr_scheduler': lr_scheduler }
     
+class KeT5SmallModule(KeT5Module):
+    def __init__(self):
+        super().__init__('KETI-AIR/ke-t5-small')
+
+    
+class KeT5BaseModule(KeT5Module):
+    def __init__(self):
+        super().__init__('KETI-AIR/ke-t5-base')
+
+class KeT5LargeModule(KeT5Module):
+    def __init__(self):
+        super().__init__('KETI-AIR/ke-t5-large')
+    
 keT5Small = Model(
     feature_converter=EncDecFeatureConverter, # type: ignore
     module=KeT5SmallModule, # type: ignore
+    tokenizer=KeT5Tokenizer # type: ignore
+)
+
+keT5Base = Model(
+    feature_converter=EncDecFeatureConverter, # type: ignore
+    module=KeT5BaseModule, # type: ignore
+    tokenizer=KeT5Tokenizer # type: ignore
+)
+
+keT5Large = Model(
+    feature_converter=EncDecFeatureConverter, # type: ignore
+    module=KeT5LargeModule, # type: ignore
     tokenizer=KeT5Tokenizer # type: ignore
 )
