@@ -1,10 +1,11 @@
 from functools import partial
+from typing import Union
 import torch
 from torchdata.datapipes import iter as iterpipes
 from local_types import *
 
 class EncDecFeatureConverter:
-    def __init__(self, pad_to: int | None):
+    def __init__(self, pad_to: Union[int, None]):
         self.pad_to = pad_to
 
     def _convert_feature(self, sample: FeatureConverterInput, tokenizer: Tokenizer):

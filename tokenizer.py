@@ -39,7 +39,7 @@ class KeT5Tokenizer:
         # implementation detail: bos token == pad token
         return self._tokenizer.pad_token_id
 
-    def _encode(self, text: str, pad_to: int | None = None, truncate = False):
+    def _encode(self, text: str, pad_to: Union[int, None] = None, truncate = False):
         if pad_to is not None:
             encoded = self._tokenizer(text, padding='max_length', truncation=truncate, max_length=pad_to)
         else:

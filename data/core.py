@@ -2,7 +2,7 @@ from multiprocessing import cpu_count
 from lightning.pytorch import LightningModule, LightningDataModule
 import torch
 from torch.utils.data import DataLoader
-from typing import Tuple
+from typing import Tuple, Union
 from torchdata.datapipes import iter as iterpipes
 from .pipes import FeatureTokenizer
 from local_types import *
@@ -10,7 +10,7 @@ from local_types import *
 
 class BaseLightningModule(LightningModule):
     tokenizer: Tokenizer
-    postprocessor: PostProcessor | None
+    postprocessor: Union[PostProcessor, None]
     metrics: list[Metric]
     config: dict
     _validation_outputs: list[ModelStepOutput]
@@ -25,8 +25,8 @@ class BaseLightningModule(LightningModule):
         self,
         tokenizer: Tokenizer,
         config: dict,
-        postprocessor: PostProcessor | None = None,
-        metrics: list[Metric] | None = None,
+        postprocessor: Union[PostProcessor, None] = None,
+        metrics: Union[list[Metric], None] = None,
     ):
         self.tokenizer = tokenizer
         self.postprocessor = postprocessor

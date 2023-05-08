@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Protocol, NamedTuple, TypedDict, Type
+from typing import Protocol, NamedTuple, TypedDict, Type, Union
 import torch
 from torchdata.datapipes import iter as iterpipes
 from lightning.pytorch import LightningDataModule
@@ -13,19 +13,19 @@ class BatchTokenizerEncoding(NamedTuple):
     attention_mask: list[list[int]]
 
 class Tokenizer(Protocol):
-    bos_token: str | None
-    eos_token: str | None
-    pad_token: str | None
-    unk_token: str | None
-    bos_token_id: int | None
-    eos_token_id: int | None
-    pad_token_id: int | None
-    unk_token_id: int | None
+    bos_token: Union[str, None]
+    eos_token: Union[str, None]
+    pad_token: Union[str, None]
+    unk_token: Union[str, None]
+    bos_token_id: Union[int, None]
+    eos_token_id: Union[int, None]
+    pad_token_id: Union[int, None]
+    unk_token_id: Union[int, None]
 
-    def encode(self, text: str, pad_to: int | None = None, **kwargs) -> TokenizerEncoding:
+    def encode(self, text: str, pad_to: Union[int, None] = None, **kwargs) -> TokenizerEncoding:
         ...
 
-    def encode_batch(self, batch: list[str], pad_to: int | None = None, **kwargs) -> BatchTokenizerEncoding:
+    def encode_batch(self, batch: list[str], pad_to: Union[int, None] = None, **kwargs) -> BatchTokenizerEncoding:
         ...
 
     def decode(self, token_ids: list[int], remove_special_tokens: bool = False, **kwargs) -> str:
@@ -44,7 +44,7 @@ class EncDecSample(TypedDict):
 class DecSample(TypedDict):
     ...
 
-Sample = EncDecSample | DecSample
+Sample = Union[EncDecSample, DecSample]
 
 class DetokenizedOutput(TypedDict):
     y: list[str]
@@ -69,8 +69,8 @@ class Task(NamedTuple):
     name: str
     source: dict[str, iterpipes.IterDataPipe]
     pipes: list
-    postprocessor: PostProcessor | None
-    metrics: list[Metric] | None
+    postprocessor: Union[PostProcessor, None]
+    metrics: Union[list[Metric], None]
 
 class Model(NamedTuple):
     feature_converter: Type[DataPipe]

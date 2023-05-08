@@ -4,3 +4,4 @@ wandb
 tinker.py
 tinker.ipynb
 lightning_logs
+config.yaml
