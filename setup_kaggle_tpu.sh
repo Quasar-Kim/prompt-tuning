@@ -1,4 +1,4 @@
 #!/bin/bash
 curl -sSL https://install.python-poetry.org | python3 -
-~/.local/bin/poetry env use $(which python3.9)
-~/.local/bin/poetry install -q --no-root
+!~/.local/bin/poetry export -f requirements.txt > requirements.txt
+!pip install -r requirements.txt

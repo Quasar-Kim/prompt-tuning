@@ -19,7 +19,7 @@ class EncDecFeatureConverter:
             'y': self._pad(sample['y'] + [tokenizer.pad_token_id], tokenizer.pad_token_id)
         }
     
-    def _pad(self, l: list[int], pad_value: int):
+    def _pad(self, l: 'list[int]', pad_value: int):
         t = torch.tensor(l)
         if self.pad_to is None:
             return t

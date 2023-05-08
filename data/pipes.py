@@ -12,7 +12,7 @@ class TorchDataPipe:
         return self.cls(dp, *self.args, **self.kwargs)
     
 class KeyMapper:
-    def __init__(self, mapping: dict[str, str]):
+    def __init__(self, mapping: 'dict[str, str]'):
         self.mapping = mapping
 
     def _map(self, sample):
@@ -26,7 +26,7 @@ class KeyMapper:
         return iterpipes.Mapper(dp, self._map)
 
 class YMapper:
-    def __init__(self, mapping: dict[str, str]):
+    def __init__(self, mapping: 'dict[str, str]'):
         self.mapping = mapping
 
     def _map(self, sample):

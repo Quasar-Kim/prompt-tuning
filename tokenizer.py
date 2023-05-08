@@ -60,8 +60,8 @@ class KeT5Tokenizer:
             attention_mask=encoded['attention_mask']
         )
 
-    def decode(self, token_ids: list[int], remove_special_tokens: bool = False) -> str:
+    def decode(self, token_ids: 'list[int]', remove_special_tokens: bool = False) -> str:
         return self._tokenizer.decode(token_ids, skip_special_tokens=remove_special_tokens)
     
-    def decode_batch(self, batch_token_ids: list[list[int]], remove_special_tokens: bool = False) -> list[str]:
+    def decode_batch(self, batch_token_ids: 'list[list[int]]', remove_special_tokens: bool = False) -> 'list[str]':
         return self._tokenizer.batch_decode(batch_token_ids, skip_special_tokens=remove_special_tokens)

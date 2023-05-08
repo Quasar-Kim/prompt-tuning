@@ -11,9 +11,9 @@ from local_types import *
 class BaseLightningModule(LightningModule):
     tokenizer: Tokenizer
     postprocessor: Union[PostProcessor, None]
-    metrics: list[Metric]
+    metrics: 'list[Metric]'
     config: dict
-    _validation_outputs: list[ModelStepOutput]
+    _validation_outputs: 'list[ModelStepOutput]'
 
     def __init__(self):
         super().__init__()
@@ -26,7 +26,7 @@ class BaseLightningModule(LightningModule):
         tokenizer: Tokenizer,
         config: dict,
         postprocessor: Union[PostProcessor, None] = None,
-        metrics: Union[list[Metric], None] = None,
+        metrics: Union['list[Metric]', None] = None,
     ):
         self.tokenizer = tokenizer
         self.postprocessor = postprocessor
@@ -63,7 +63,7 @@ class BaseLightningModule(LightningModule):
         self._compute_metrics(outputs)
 
     def _collate_outputs(self):
-        def stack_or_cat(tensors: list[torch.Tensor]):
+        def stack_or_cat(tensors: 'list[torch.Tensor]'):
             if tensors[0].ndim > 0:
                 return torch.cat(tensors)
             else:
@@ -97,8 +97,8 @@ class BaseLightningModule(LightningModule):
 class DataPipeDataModule(LightningDataModule):
     def __init__(
         self,
-        source: dict[str, iterpipes.IterDataPipe],
-        pipes: list[DataPipe],
+        source: 'dict[str, iterpipes.IterDataPipe]',
+        pipes: 'list[DataPipe]',
         feature_converter: DataPipe,
         tokenizer: Tokenizer,
         config: dict

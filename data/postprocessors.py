@@ -1,7 +1,7 @@
 from local_types import *
 
 class ClassificationPostProcessor:
-    def __init__(self, mapping: dict[str, int], invalid_class_label=100):
+    def __init__(self, mapping: 'dict[str, int]', invalid_class_label=100):
         self.mapping = mapping
         self.invalid_class_label = invalid_class_label
     
