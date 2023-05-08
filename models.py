@@ -6,6 +6,7 @@ from torch.optim.lr_scheduler import LambdaLR
 from data.core import BaseLightningModule
 from data.feature_converters import EncDecFeatureConverter
 from tokenizer import KeT5Tokenizer
+from peft import get_peft_model, LoraConfig, TaskType
 from local_types import *
 
 def inv_sqrt_lambda(epoch, warmup_epochs):
@@ -49,6 +50,18 @@ class KeT5BaseModule(KeT5Module):
 class KeT5LargeModule(KeT5Module):
     def __init__(self):
         super().__init__('KETI-AIR/ke-t5-large')
+
+class KeT5BaseLoraModule(KeT5BaseModule):
+    def __init__(self):
+        super().__init__()
+        lora_config = LoraConfig(
+            task_type=TaskType.SEQ_2_SEQ_LM,
+            inference_mode=False,
+            r=8,
+            lora_alpha=32,
+            lora_dropout=0.1
+        )
+        self.module = get_peft_model(self.module, lora_config)
     
 keT5Small = Model(
     feature_converter=EncDecFeatureConverter, # type: ignore
@@ -65,5 +78,11 @@ keT5Base = Model(
 keT5Large = Model(
     feature_converter=EncDecFeatureConverter, # type: ignore
     module=KeT5LargeModule, # type: ignore
+    tokenizer=KeT5Tokenizer # type: ignore
+)
+
+keT5BaseLora = Model(
+    feature_converter=EncDecFeatureConverter, # type: ignore
+    module=KeT5BaseLoraModule, # type: ignore
     tokenizer=KeT5Tokenizer # type: ignore
 )

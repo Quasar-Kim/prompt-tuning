@@ -20,6 +20,7 @@ pandas = "^2.0.0"
 wandb = "^0.14.2"
 sentencepiece = "^0.1.98"
 torchdata = "^0.6.0"
+peft = "^0.3.0"
 
 
 [tool.poetry.group.dev.dependencies]
