@@ -147,11 +147,13 @@ def create_experiment(
     batch_size, 
     is_gpu=False,
     pad_to=None,
+    num_workers=None,
     **kwargs
 ) -> Tuple[BaseLightningModule, DataPipeDataModule]:
     config = {
         'batch_size': batch_size,
         'is_gpu': is_gpu,
+        'num_workers': cpu_count() if num_workers is None else num_workers,
         **kwargs
     }
 
