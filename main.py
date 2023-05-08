@@ -6,9 +6,9 @@ from data.core import create_experiment
 
 class MyCLI(LightningCLI):
     def add_arguments_to_parser(self, parser: LightningArgumentParser):
-        parser.add_argument('--experiment')
+        parser.add_argument('--experiment', type=dict)
+        parser.add_argument('--ckpt_path', enable_path=True, default=None)
 
-# TODO: allow experiment to be configurable
 def cli_main():
     cli = MyCLI(DemoModel, BoringDataModule, save_config_kwargs={'overwrite': True}, run=False)
     cfg = cli.config['experiment']
@@ -19,7 +19,7 @@ def cli_main():
         model,
         **cfg
     )
-    cli.trainer.fit(lit_model, dm)
+    cli.trainer.fit(lit_model, dm, ckpt_path=cli.config['ckpt_path'])
     
 if __name__ == "__main__":
     cli_main()
