@@ -62,6 +62,18 @@ class KeT5BaseLoraModule(KeT5BaseModule):
             lora_dropout=0.1
         )
         self.module = get_peft_model(self.module, lora_config)
+
+class KeT5LargeLoraModule(KeT5LargeModule):
+    def __init__(self):
+        super().__init__()
+        lora_config = LoraConfig(
+            task_type=TaskType.SEQ_2_SEQ_LM,
+            inference_mode=False,
+            r=8,
+            lora_alpha=32,
+            lora_dropout=0.1
+        )
+        self.module = get_peft_model(self.module, lora_config)
     
 keT5Small = Model(
     feature_converter=EncDecFeatureConverter, # type: ignore
@@ -84,5 +96,11 @@ keT5Large = Model(
 keT5BaseLora = Model(
     feature_converter=EncDecFeatureConverter, # type: ignore
     module=KeT5BaseLoraModule, # type: ignore
+    tokenizer=KeT5Tokenizer # type: ignore
+)
+
+keT5LargeLora = Model(
+    feature_converter=EncDecFeatureConverter, # type: ignore
+    module=KeT5LargeLoraModule, # type: ignore
     tokenizer=KeT5Tokenizer # type: ignore
 )
