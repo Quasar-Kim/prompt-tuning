@@ -22,12 +22,6 @@ torchdata = "^0.6.0"
 peft = "^0.3.0"
 torch = "2.0.0"
 
-[tool.poetry.group.tpu]
-optional = true
-
-[tool.poetry.group.tpu.dependencies]
-torch_xla = {version = "^2.0.0", path = "https://storage.googleapis.com/tpu-pytorch/wheels/tpuvm/torch_xla-2.0-cp38-cp38-linux_x86_64.whl", extras = ["tpuvm"] }
-
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.22.0"
