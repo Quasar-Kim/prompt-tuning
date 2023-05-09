@@ -2,9 +2,9 @@ trainer:
   max_epochs: 50
 experiment:
   task: khs
-  model: keT5BaseLora
+  model: keT5Large
   pad_to: 128
-  batch_size: 16
+  batch_size: 8
   hp:
     lr: 1e-3
     num_warmup_epochs: 5

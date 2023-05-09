@@ -1,5 +1,5 @@
 trainer:
-  max_epochs: 30
+  max_epochs: 50
 experiment:
   task: khs
   model: keT5LargeLora
