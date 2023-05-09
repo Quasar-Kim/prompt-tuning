@@ -5,13 +5,14 @@ trainer:
     class_path: WandbLogger
     init_args:
       project: khs-ket5
+      log_model: True
   callbacks:
     - class_path: LearningRateMonitor
       init_args:
         logging_interval: epoch
     - class_path: ModelCheckpoint
       init_args:
-        every_n_epochs: 5
-        filename: "{epoch}"
+        monitor: validation/loss
+        save_last: True
 experiment:
   is_gpu: True
