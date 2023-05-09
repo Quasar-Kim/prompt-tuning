@@ -1,4 +1,3 @@
-seed_everything: 42
 trainer:
   accelerator: cpu
   devices: 2
