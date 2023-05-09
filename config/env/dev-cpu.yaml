@@ -1,0 +1,5 @@
+seed_everything: 42
+trainer:
+  accelerator: cpu
+experiment:
+  batch_size: 2

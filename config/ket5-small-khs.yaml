@@ -5,7 +5,6 @@ experiment:
   model: keT5Small
   pad_to: 128
   batch_size: 32
-  is_gpu: True
   hp:
-    lr: 1e-4
+    lr: 1e-3
     num_warmup_epochs: 5

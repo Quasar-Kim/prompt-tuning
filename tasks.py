@@ -10,7 +10,7 @@ khs = Task(
     },
     pipes=[
         pipes.TorchDataPipe(iterpipes.Shuffler),
-        pipes.TorchDataPipe(iterpipes.ShardingFilter),
+        pipes.WorkerShardingFilter(),
         pipes.KeyMapper({
             'text': 'x',
             'label': 'y'

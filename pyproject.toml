@@ -8,7 +8,6 @@ packages = [{include = "prompt-tuning"}]
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.9.7 || >3.9.7,<4.0"
-torch = "^2.0.0"
 transformers = "^4.27.4"
 tokenizers = "^0.13.3"
 datasets = "^2.11.0"
@@ -21,6 +20,7 @@ wandb = "^0.14.2"
 sentencepiece = "^0.1.98"
 torchdata = "^0.6.0"
 peft = "^0.3.0"
+torch = "2.0.0"
 
 
 [tool.poetry.group.dev.dependencies]

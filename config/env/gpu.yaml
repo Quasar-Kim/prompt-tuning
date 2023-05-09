@@ -1,2 +1,17 @@
+seed_everything: 42
+trainer:
+  accelerator: gpu
+  logger:
+    class_path: WandbLogger
+    init_args:
+      project: khs-ket5
+  callbacks:
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    - class_path: ModelCheckpoint
+      init_args:
+        every_n_epochs: 5
+        filename: "{epoch}"
 experiment:
   is_gpu: True

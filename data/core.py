@@ -127,15 +127,17 @@ class DataPipeDataModule(LightningDataModule):
         
     def train_dataloader(self):
         return DataLoader(
-            self.train_datapipe, 
-            num_workers=cpu_count(), 
+            self.train_datapipe,
+            shuffle=True,
+            num_workers=cpu_count(),
             batch_size=self.config['batch_size'],
             pin_memory=self.config['is_gpu']
         )
     
     def val_dataloader(self):
         return DataLoader(
-            self.validation_datapipe, 
+            self.validation_datapipe,
+            shuffle=False,
             num_workers=cpu_count(), 
             batch_size=self.config['batch_size'],
             pin_memory=self.config['is_gpu']

@@ -1,5 +1,6 @@
 from functools import partial
 from torchdata.datapipes import iter as iterpipes
+from torch.utils.data.datapipes.iter.sharding import SHARDING_PRIORITIES
 from local_types import *
     
 class TorchDataPipe:
@@ -10,6 +11,10 @@ class TorchDataPipe:
 
     def __call__(self, dp, dm):
         return self.cls(dp, *self.args, **self.kwargs)
+    
+class WorkerShardingFilter:
+    def __call__(self, dp, dm):
+        return iterpipes.ShardingFilter(dp, sharding_group_filter=SHARDING_PRIORITIES.MULTIPROCESSING)
     
 class KeyMapper:
     def __init__(self, mapping: 'dict[str, str]'):
