@@ -1,4 +1,6 @@
+from lightning.pytorch.callbacks.progress.tqdm_progress import Tqdm
 from lightning.pytorch.cli import LightningArgumentParser, LightningCLI
+from lightning.pytorch.callbacks import TQDMProgressBar
 from lightning.pytorch.demos.boring_classes import DemoModel, BoringDataModule
 import tasks
 import models
@@ -9,8 +11,28 @@ class MyCLI(LightningCLI):
         parser.add_argument('--experiment', type=dict)
         parser.add_argument('--ckpt_path', enable_path=True, default=None)
 
+class StatOnlyProgressBar(TQDMProgressBar):
+    def _init_tqdm(self, bar):
+        bar.total = None
+        return bar
+
+    def init_train_tqdm(self) -> Tqdm:
+        bar = super().init_train_tqdm()
+        bar = self._init_tqdm(bar)
+        return bar
+    
+    def init_validation_tqdm(self) -> Tqdm:
+        bar = super().init_validation_tqdm()
+        bar = self._init_tqdm(bar)
+        return bar
+
 def cli_main():
-    cli = MyCLI(DemoModel, BoringDataModule, save_config_kwargs={'overwrite': True}, run=False)
+    cli = MyCLI(
+        DemoModel, 
+        BoringDataModule, 
+        save_config_kwargs={'overwrite': True}, 
+        run=False
+    )
     cfg = cli.config['experiment']
     task = getattr(tasks, cfg.pop('task'))
     model = getattr(models, cfg.pop('model'))
