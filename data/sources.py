@@ -11,7 +11,7 @@ def _is_distributed():
 @functools.lru_cache(maxsize=None)
 def _using_xla():
     try:
-        import torch_xla
+        import torch_xla # type: ignore
         return True
     except ImportError:
         return False
@@ -27,7 +27,7 @@ class ParquetFileLoader(iterpipes.IterDataPipe):
             world_size = dist.get_world_size()
             n_actual_samples = (len(df) // world_size) * world_size
         elif _using_xla():
-            import torch_xla.core.xla_model as xm
+            import torch_xla.core.xla_model as xm # type: ignore
             rank = xm.get_ordinal()
             world_size = xm.xrt_world_size()
             n_actual_samples = (len(df) // world_size) * world_size
@@ -37,8 +37,3 @@ class ParquetFileLoader(iterpipes.IterDataPipe):
             n_actual_samples = len(df)
         for t in islice(df.itertuples(index=False), rank, n_actual_samples, world_size):
             yield t._asdict()
-
-    def __len__(self):
-        # BUG: 원래는 __len__ 없이도 TPU에서 작동해야 하나 현재 버전 (2.0.2)에서는 __len__을 체크함
-        # https://github.com/Lightning-AI/lightning/issues/17321
-        return 10000
