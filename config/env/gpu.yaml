@@ -5,7 +5,6 @@ trainer:
     class_path: WandbLogger
     init_args:
       project: khs-ket5
-      log_model: True
   callbacks:
     - class_path: LearningRateMonitor
       init_args:
