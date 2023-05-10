@@ -7,11 +7,10 @@ readme = "README.md"
 packages = [{include = "prompt-tuning"}]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.9.7 || >3.9.7,<4.0"
+python = "~3.8"
 transformers = "^4.27.4"
 tokenizers = "^0.13.3"
 datasets = "^2.11.0"
-lightning = {extras = ["extra"], version = "^2.0.1"}
 fastapi = "^0.86"
 torchmetrics = "^0.11.4"
 requests = "^2.28.2"
@@ -21,6 +20,7 @@ sentencepiece = "^0.1.98"
 torchdata = "^0.6.0"
 peft = "^0.3.0"
 torch = "2.0.0"
+lightning = {git = "https://github.com/Lightning-AI/lightning.git", rev = "master", extras = ["extra"]}
 
 
 [tool.poetry.group.dev.dependencies]
@@ -33,6 +33,10 @@ torchview = "^0.2.6"
 pytest-env = "^0.8.1"
 ipywidgets = "^8.0.6"
 typing-extensions = "^4.5.0"
+
+
+[tool.poetry.group.extras.dependencies]
+torch-xla = {url = "https://storage.googleapis.com/tpu-pytorch/wheels/tpuvm/torch_xla-2.0-cp38-cp38-linux_x86_64.whl"}
 
 [build-system]
 requires = ["poetry-core"]
