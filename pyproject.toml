@@ -36,7 +36,7 @@ typing-extensions = "^4.5.0"
 [tool.poetry.group.xla]
 optional = true
 
-[tool.poetry.group.xla]
+[tool.poetry.group.xla.dependencies]
 torch-xla = {url = "https://storage.googleapis.com/tpu-pytorch/wheels/tpuvm/torch_xla-2.0-cp38-cp38-linux_x86_64.whl"}
 
 [build-system]
