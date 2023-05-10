@@ -22,7 +22,6 @@ peft = "^0.3.0"
 torch = "2.0.0"
 lightning = {git = "https://github.com/Lightning-AI/lightning.git", rev = "master", extras = ["extra"]}
 
-
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.22.0"
 pytest = "^7.3.0"
@@ -34,8 +33,10 @@ pytest-env = "^0.8.1"
 ipywidgets = "^8.0.6"
 typing-extensions = "^4.5.0"
 
+[tool.poetry.group.xla]
+optional = true
 
-[tool.poetry.group.extras.dependencies]
+[tool.poetry.group.xla]
 torch-xla = {url = "https://storage.googleapis.com/tpu-pytorch/wheels/tpuvm/torch_xla-2.0-cp38-cp38-linux_x86_64.whl"}
 
 [build-system]
