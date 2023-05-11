@@ -1,3 +1,4 @@
 trainer:
   accelerator: tpu
   devices: 8
+  precision: bf16-mixed

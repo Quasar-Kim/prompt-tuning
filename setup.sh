@@ -9,7 +9,7 @@ if ! command -v "python3.8" >/dev/null 2>&1; then
 fi
 
 # install dependencies
-curl -sSL https://install.python-poetry.org | python3 -
+(curl -sSL https://install.python-poetry.org | python3 -) > /dev/null
 ~/.local/bin/poetry env use $(which python3.8)
 ~/.local/bin/poetry install -q --no-root
 

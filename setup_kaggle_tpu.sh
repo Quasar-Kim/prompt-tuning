@@ -9,15 +9,16 @@ if ! command -v "python3.8" >/dev/null 2>&1; then
 fi
 
 # install dependencies
-curl -sSL https://install.python-poetry.org | python3 -
+(curl -sSL https://install.python-poetry.org | python3 -) > /dev/null
 ~/.local/bin/poetry env use $(which python3.8)
+~/.local/bin/poetry config installer.max-workers 10
 ~/.local/bin/poetry install -q --no-root --with xla
 
 # install lightning 2.1.0.dev
 ~/.local/bin/poetry remove -q lightning
 git clone --quiet https://github.com/lightning-ai/lightning.git
 cd lightning
-git checkout 83f6832
+git checkout --quiet 83f6832
 cd ..
 ~/.local/bin/poetry add -q "./lightning"[extra]
 

@@ -2,6 +2,7 @@ seed_everything: 42
 trainer:
   accelerator: tpu
   devices: 8
+  precision: bf16-mixed
   check_val_every_n_epoch: 5
   logger:
     class_path: WandbLogger
