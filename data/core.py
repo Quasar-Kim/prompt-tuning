@@ -129,7 +129,7 @@ class DataPipeDataModule(LightningDataModule):
         return DataLoader(
             self.train_datapipe,
             shuffle=True,
-            num_workers=cpu_count(),
+            num_workers=self.config['num_workers'],
             batch_size=self.config['batch_size'],
             pin_memory=self.config['is_gpu']
         )
@@ -138,7 +138,7 @@ class DataPipeDataModule(LightningDataModule):
         return DataLoader(
             self.validation_datapipe,
             shuffle=False,
-            num_workers=cpu_count(), 
+            num_workers=self.config['num_workers'], 
             batch_size=self.config['batch_size'],
             pin_memory=self.config['is_gpu']
         )
