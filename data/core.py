@@ -155,7 +155,10 @@ def create_experiment(
     config = {
         'batch_size': batch_size,
         'is_gpu': is_gpu,
-        'num_workers': cpu_count() if num_workers is None else num_workers,
+        # cpu count가 극단적으로 높은 경우 (예: TPU VM은 96개)
+        # batch size가 지켜지지 않을 수 있으므로 max 제한 검
+        # config에서 설정하는 것에 제일 좋음
+        'num_workers': min(cpu_count(), 16) if num_workers is None else num_workers,
         **kwargs
     }
 
