@@ -1,0 +1,18 @@
+seed_everything: 42
+trainer:
+  accelerator: tpu
+  devices: 8
+  check_val_every_n_epoch: 5
+  logger:
+    class_path: WandbLogger
+    init_args:
+      project: khs-ket5
+  callbacks:
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    - class_path: ModelCheckpoint
+      init_args:
+        every_n_epochs: 5
+        monitor: validation/loss
+        save_last: True
