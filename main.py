@@ -3,6 +3,7 @@ from lightning.pytorch.demos.boring_classes import DemoModel, BoringDataModule
 import tasks
 import models
 from data.core import create_experiment
+import sys
 
 class MyCLI(LightningCLI):
     def add_arguments_to_parser(self, parser: LightningArgumentParser):
@@ -14,8 +15,13 @@ def cli_main():
         DemoModel, 
         BoringDataModule, 
         save_config_kwargs={'overwrite': True}, 
-        run=False
+        run=False,
+        args=sys.argv[2:]
     )
+    
+    subcommand = sys.argv[1]
+    fn = getattr(cli.trainer, subcommand)
+
     cfg = cli.config['experiment']
     task = getattr(tasks, cfg.pop('task'))
     model = getattr(models, cfg.pop('model'))
@@ -24,7 +30,7 @@ def cli_main():
         model,
         **cfg
     )
-    cli.trainer.fit(lit_model, dm, ckpt_path=cli.config['ckpt_path'])
+    fn(lit_model, dm, ckpt_path=cli.config['ckpt_path'])
     
 if __name__ == "__main__":
     cli_main()
