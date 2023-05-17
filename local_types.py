@@ -17,8 +17,8 @@ class Tokenizer(Protocol):
     eos_token: Union[str, None]
     pad_token: Union[str, None]
     unk_token: Union[str, None]
-    bos_token_id: Union[int, None]
-    eos_token_id: Union[int, None]
+    bos_token_id: int
+    eos_token_id: int
     pad_token_id: Union[int, None]
     unk_token_id: Union[int, None]
 

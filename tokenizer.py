@@ -41,9 +41,9 @@ class KeT5Tokenizer:
 
     def _encode(self, text: str, pad_to: Union[int, None] = None, truncate = False):
         if pad_to is not None:
-            encoded = self._tokenizer(text, padding='max_length', truncation=truncate, max_length=pad_to)
+            encoded = self._tokenizer(text, padding='max_length', truncation=truncate, max_length=pad_to, add_special_tokens=False)
         else:
-            encoded = self._tokenizer(text)
+            encoded = self._tokenizer(text, add_special_tokens=False)
         return encoded
     
     def encode(self, *args, **kwargs) -> TokenizerEncoding:
