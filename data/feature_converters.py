@@ -14,9 +14,9 @@ class EncDecFeatureConverter:
         return {
             'enc_x': self._pad(sample['x'], tokenizer.pad_token_id),
             'enc_attention_mask': self._pad(sample['x_attention_mask'], 0),
-            'dec_x': self._pad([tokenizer.bos_token_id] + sample['y'], tokenizer.pad_token_id),
-            'dec_attention_mask': self._pad([1] + sample['y_attention_mask'], 0),
-            'y': self._pad(sample['y'] + [tokenizer.pad_token_id], tokenizer.pad_token_id)
+            'dec_x': self._pad([tokenizer.bos_token_id] + sample['y'] + [tokenizer.eos_token_id], tokenizer.pad_token_id),
+            'dec_attention_mask': self._pad([1] + sample['y_attention_mask'] + [1], 0),
+            'y': self._pad(sample['y'] + [tokenizer.eos_token_id], tokenizer.pad_token_id)
         }
     
     def _pad(self, l: 'list[int]', pad_value: int):

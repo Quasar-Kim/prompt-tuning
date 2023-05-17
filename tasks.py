@@ -24,7 +24,7 @@ khs = Task(
     postprocessor=postprocessors.ClassificationPostProcessor({
         '혐오': 2,
         '공격적': 1,
-        '중립': 1
+        '중립': 0
     }),
     metrics=[
         metrics.Accuracy()
