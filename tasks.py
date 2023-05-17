@@ -27,6 +27,7 @@ khs = Task(
         '중립': 0
     }),
     metrics=[
-        metrics.Accuracy()
+        metrics.Accuracy(),
+        metrics.MacroF1(n_classes=3)
     ]
 )
