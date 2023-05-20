@@ -1,3 +1,4 @@
+from typing import Any
 from functools import partial
 from torchdata.datapipes import iter as iterpipes
 from torch.utils.data.datapipes.iter.sharding import SHARDING_PRIORITIES
@@ -31,7 +32,7 @@ class KeyMapper:
         return iterpipes.Mapper(dp, self._map)
 
 class YMapper:
-    def __init__(self, mapping: 'dict[str, str]'):
+    def __init__(self, mapping: 'dict[Any, str]'):
         self.mapping = mapping
 
     def _map(self, sample):

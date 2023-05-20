@@ -1,5 +1,6 @@
 from multiprocessing import cpu_count
 from lightning.pytorch import LightningModule, LightningDataModule
+from lightning.pytorch.utilities.types import EVAL_DATALOADERS
 import torch
 from torch.utils.data import DataLoader
 from typing import Tuple, Union
@@ -117,6 +118,8 @@ class DataPipeDataModule(LightningDataModule):
             self.train_datapipe = self._build_datapipe('train')
         if stage == 'fit' or stage == 'validate':
             self.validation_datapipe = self._build_datapipe('validation')
+        if stage == 'test':
+            self.test_datapipe = self._build_datapipe('test')
 
     def _build_datapipe(self, stage: str) -> iterpipes.IterDataPipe:
         source_pipe = self.source[stage]
@@ -126,22 +129,44 @@ class DataPipeDataModule(LightningDataModule):
         return dp # type: ignore
         
     def train_dataloader(self):
-        return DataLoader(
+        return self._create_dataloader(
             self.train_datapipe,
-            shuffle=True,
-            num_workers=self.config['num_workers'],
-            batch_size=self.config['batch_size'],
-            pin_memory=self.config['is_gpu']
+            shuffle=True
         )
     
+    @property
     def val_dataloader(self):
-        return DataLoader(
+        if not hasattr(self, 'validation_datapipe'):
+            raise AttributeError
+        return self._val_dataloader
+
+    def _val_dataloader(self):
+        return self._create_dataloader(
             self.validation_datapipe,
-            shuffle=False,
+            shuffle=False
+        )
+    
+    @property
+    def test_dataloader(self):
+        if not hasattr(self, 'test_datapipe'):
+            raise AttributeError
+        return self._test_dataloader
+    
+    def _test_dataloader(self):
+        return self._create_dataloader(
+            self.test_datapipe,
+            shuffle=False
+        )
+    
+    def _create_dataloader(self, datapipe, **kwargs):
+        return DataLoader(
+            datapipe,
             num_workers=self.config['num_workers'], 
             batch_size=self.config['batch_size'],
-            pin_memory=self.config['is_gpu']
+            pin_memory=self.config['is_gpu'],
+            **kwargs
         )
+        
 
 def create_experiment(
     task: Task,
