@@ -1,10 +1,19 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
+
 import sys
+import warnings
 from lightning.pytorch.cli import LightningArgumentParser, LightningCLI
 from lightning.pytorch.demos.boring_classes import DemoModel, BoringDataModule
 
 import tasks
 import models
 from data.core import create_experiment
+from xla_strategy.strategy import XlaPjrtFsdpStrategy
+
+warnings.filterwarnings('ignore', message=r'.*args parameter is intended to run from within Python like if it were from the command line.*')
+warnings.filterwarnings('ignore', message=r'.*TPU available but not used.*')
+warnings.filterwarnings('ignore', message=r'[\s\S]*Not possible to serialize an instance of[\s\S]*')
 
 class MyCLI(LightningCLI):
     def add_arguments_to_parser(self, parser: LightningArgumentParser):
@@ -17,7 +26,10 @@ def cli_main():
         BoringDataModule, 
         save_config_kwargs={'overwrite': True}, 
         run=False,
-        args=sys.argv[2:]
+        args=sys.argv[2:],
+        trainer_defaults={
+            'strategy': XlaPjrtFsdpStrategy()
+        }
     )
     
     subcommand = sys.argv[1]

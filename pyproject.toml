@@ -20,7 +20,7 @@ sentencepiece = "^0.1.98"
 torchdata = "^0.6.0"
 peft = "^0.3.0"
 torch = "2.0.0"
-lightning = {version = "2.0.2", extras = ["extra"]}
+lightning = {git = "https://github.com/quasar-kim/lightning.git", rev = "multithreading-chkpt", extras = ["extra"]}
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.22.0"
@@ -32,6 +32,10 @@ torchview = "^0.2.6"
 pytest-env = "^0.8.1"
 ipywidgets = "^8.0.6"
 typing-extensions = "^4.5.0"
+torch-tb-profiler = "^0.4.1"
+tensorboard-plugin-profile = "^2.13.0"
+tensorflow = "^2.12.0"
+tensorboard = "2.12"
 
 [tool.poetry.group.xla]
 optional = true

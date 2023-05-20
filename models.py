@@ -37,6 +37,12 @@ class KeT5Module(BaseLightningModule):
         optimizer = optim.Adam(self.parameters(), lr=self.hp['lr'])
         lr_scheduler = LambdaLR(optimizer, lr_lambda=partial(inv_sqrt_lambda, warmup_epochs=self.hp['num_warmup_epochs']))
         return { 'optimizer': optimizer, 'lr_scheduler': lr_scheduler }
+
+    @property
+    def xla_fsdp_auto_wrap_policy(self):
+        from torch_xla.distributed.fsdp.wrap import transformer_auto_wrap_policy
+        from transformers.models.t5.modeling_t5 import T5Block
+        return partial(transformer_auto_wrap_policy, transformer_layer_cls={T5Block})
     
 class KeT5SmallModule(KeT5Module):
     def __init__(self):
