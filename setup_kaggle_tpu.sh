@@ -25,3 +25,6 @@ cd ..
 # copy parquet files to repository
 mkdir -p /kaggle/working/prompt-tuning/data/khs
 cp /kaggle/input/kcmoe-pretrain-finetune-dataset/hate-speech/*.parquet /kaggle/working/prompt-tuning/data/khs
+
+mkdir -p /kaggle/working/prompt-tuning/data/nsmc
+cp /kaggle/input/nsmc-parquet/*.parquet /kaggle/working/prompt-tuning/data/nsmc
