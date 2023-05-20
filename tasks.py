@@ -31,3 +31,58 @@ khs = Task(
         metrics.MacroF1(n_classes=3)
     ]
 )
+
+nsmc_with_validation = Task(
+    name='nsmc_with_validation',
+    source={
+        'train': sources.ParquetFileLoader('data/nsmc/train.parquet'),
+        'validation': sources.ParquetFileLoader('data/nsmc/validation.parquet'),
+        'test': sources.ParquetFileLoader('data/nsmc/test.parquet')
+    },
+    pipes=[
+        pipes.TorchDataPipe(iterpipes.Shuffler),
+        pipes.WorkerShardingFilter(),
+        pipes.KeyMapper({
+            'text': 'x',
+            'label': 'y'
+        }),
+        pipes.YMapper({
+            0: '부정',
+            1: '긍정'
+        })
+    ],
+    postprocessor=postprocessors.ClassificationPostProcessor({
+        '부정': 0,
+        '긍정': 1
+    }),
+    metrics=[
+        metrics.Accuracy()
+    ]
+)
+
+nsmc = Task(
+    name='nsmc',
+    source={
+        'train': sources.ParquetFileLoader('data/nsmc/train_full.parquet'),
+        'test': sources.ParquetFileLoader('data/nsmc/test.parquet')
+    },
+    pipes=[
+        pipes.TorchDataPipe(iterpipes.Shuffler),
+        pipes.WorkerShardingFilter(),
+        pipes.KeyMapper({
+            'text': 'x',
+            'label': 'y'
+        }),
+        pipes.YMapper({
+            0: '부정',
+            1: '긍정'
+        })
+    ],
+    postprocessor=postprocessors.ClassificationPostProcessor({
+        '부정': 0,
+        '긍정': 1
+    }),
+    metrics=[
+        metrics.Accuracy()
+    ]
+)
