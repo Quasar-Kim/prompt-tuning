@@ -21,6 +21,7 @@ torchdata = "^0.6.0"
 peft = "^0.3.0"
 torch = "2.0.0"
 lightning = {extras = ["extra"], version = "^2.0.2"}
+torchvision = "0.15.1"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.22.0"
@@ -36,6 +37,7 @@ torch-tb-profiler = "^0.4.1"
 tensorboard-plugin-profile = "^2.13.0"
 tensorflow = "^2.12.0"
 tensorboard = "2.12"
+rich = "^13.3.5"
 
 [tool.poetry.group.xla]
 optional = true

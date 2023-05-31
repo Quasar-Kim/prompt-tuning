@@ -40,7 +40,7 @@ class KeT5Module(BaseLightningModule):
 
     @property
     def xla_fsdp_auto_wrap_policy(self):
-        from torch_xla.distributed.fsdp.wrap import transformer_auto_wrap_policy
+        from torch_xla.distributed.fsdp.wrap import transformer_auto_wrap_policy # type: ignore
         from transformers.models.t5.modeling_t5 import T5Block
         return partial(transformer_auto_wrap_policy, transformer_layer_cls={T5Block})
     
