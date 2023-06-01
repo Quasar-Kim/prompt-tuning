@@ -55,7 +55,7 @@ class KeT5SmallModule(KeT5Module):
     def __init__(self):
         super().__init__('KETI-AIR/ke-t5-small')
 
-keT5Small = Model(
+ket5_small = Model(
     feature_converter=feature_converter.EncDecFeatureConverter(),
     module=KeT5SmallModule(),
     tokenizer=KeT5Tokenizer()

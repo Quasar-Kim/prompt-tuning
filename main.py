@@ -24,6 +24,7 @@ def cli_main():
     fn = getattr(cli.trainer, subcommand)
 
     cfg = cli.config['experiment']
+    print(cfg)
     task = getattr(tasks, cfg.pop('task'))
     model = getattr(models, cfg.pop('model'))
     lit_model, dm = create_experiment(

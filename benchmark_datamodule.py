@@ -1,10 +1,10 @@
 import t2tpipe
 from t2tpipe.util import benchmark_datamodule
 from task import khs
-from model import keT5Small
+from model import ket5_small
 
 model, dm = t2tpipe.setup(
-    model=keT5Small,
+    model=ket5_small,
     task=khs,
     runtime_config={
         'num_warmup_epochs': 5,
