@@ -80,6 +80,7 @@ class Task:
 
 @dataclass
 class Model:
+    name: str
     feature_converter: FeatureConverter
     module: BaseLightningModule
     tokenizer: Tokenizer

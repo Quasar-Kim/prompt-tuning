@@ -1,6 +1,9 @@
+from model import ket5_small
+from task import khs
+
 def config(cfg: dict):
-    cfg['task'] = 'task.khs'
-    cfg['model'] = 'model.ket5_small'
+    cfg['task'] = khs
+    cfg['model'] = ket5_small
     cfg['runtime_config'] = {
         'batch_size': 32,
         'num_workers': 4,

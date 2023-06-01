@@ -12,8 +12,8 @@ from tokenizer import KeT5Tokenizer
 
 class InvSqrtScheduler(LambdaLR):
     def __init__(self, optimizer, warmup_epochs: int):
-        super().__init__(optimizer, lr_lambda=self._lr_lambda)
         self._warmup_epochs = warmup_epochs
+        super().__init__(optimizer, lr_lambda=self._lr_lambda)
 
     def _lr_lambda(self, epoch):
         if epoch < self._warmup_epochs:
@@ -47,8 +47,11 @@ class KeT5Module(BaseLightningModule):
         raise NotImplementedError()
     
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=self._env.runtime_config['lr'])
-        lr_scheduler = InvSqrtScheduler(optimizer, warmup_epochs=self._env.runtime_config['num_warmup_epochs'])
+        cfg = self._env.runtime_config
+        assert 'lr' in cfg
+        assert 'num_warmup_epochs' in cfg
+        optimizer = optim.Adam(self.parameters(), lr=cfg['lr'])
+        lr_scheduler = InvSqrtScheduler(optimizer, warmup_epochs=cfg['num_warmup_epochs'])
         return { 'optimizer': optimizer, 'lr_scheduler': lr_scheduler }
     
 class KeT5SmallModule(KeT5Module):
@@ -56,6 +59,7 @@ class KeT5SmallModule(KeT5Module):
         super().__init__('KETI-AIR/ke-t5-small')
 
 ket5_small = Model(
+    name='ket5_small',
     feature_converter=feature_converter.EncDecFeatureConverter(),
     module=KeT5SmallModule(),
     tokenizer=KeT5Tokenizer()

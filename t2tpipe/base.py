@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Mapping, Any, Mapping, List, Union, Tuple
+import dataclasses
 
 import torch
 from torch import Tensor
@@ -23,14 +24,21 @@ class BaseLightningModule(LightningModule, ABC):
         self._env = env
         self._configured = True
 
-    def training_step(self, batch, batch_idx) -> ModelTrainOutput:
-        return self._step_train(batch)
+    def training_step(self, batch, batch_idx):
+        output = self._step_train(batch)
+        # training_step must output dict / tensor / None
+        output_dict = output.__dict__
+        return output_dict
     
     def validation_step(self, batch, batch_idx) -> ModelTrainOutput:
-        return self._step_train(batch)
+        output = self._step_train(batch)
+        output_dict = dataclasses.asdict(output)
+        return output_dict
     
     def test_step(self, batch, batch_idx) -> ModelTrainOutput:
-        return self._step_train(batch)
+        output = self._step_train(batch)
+        output_dict = dataclasses.asdict(output)
+        return output_dict
     
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0):
         return self._step_inference(batch)
@@ -49,11 +57,11 @@ class BaseLightningModule(LightningModule, ABC):
 
     def on_train_batch_end(
         self, 
-        outputs: ModelTrainOutput, 
+        outputs: dict, 
         batch, 
         batch_idx
     ):
-        self._train_losses.append(outputs.loss)
+        self._train_losses.append(outputs['loss'])
     
     def on_train_epoch_end(self):
         self._log_loss(torch.stack(self._train_losses), stage='train')
@@ -61,18 +69,20 @@ class BaseLightningModule(LightningModule, ABC):
 
     def on_validation_batch_end(
         self, 
-        outputs: ModelTrainOutput,
+        outputs_dict: dict,
         batch, 
         batch_idx
     ):
+        outputs = ModelTrainOutput(**outputs_dict)
         self._validation_outputs.append(outputs)
 
     def on_test_batch_end(
-            self,
-            outputs: ModelTrainOutput,
-            batch,
-            batch_idx
+        self,
+        outputs_dict: dict,
+        batch,
+        batch_idx
     ):
+        outputs = ModelTrainOutput(**outputs_dict)
         self._test_outputs.append(outputs)
 
     def on_validation_epoch_end(self):
@@ -100,7 +110,7 @@ class BaseLightningModule(LightningModule, ABC):
         collated_outputs = ModelTrainOutput(
             y=torch.cat(ys), # (number of samples, N)
             y_pred=torch.cat(y_preds), # (number of samples, N)
-            loss=torch.cat(losses) # (number of samples,)
+            loss=torch.stack(losses) # (number of samples,)
         )
         return collated_outputs
 

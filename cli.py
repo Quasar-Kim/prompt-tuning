@@ -3,14 +3,14 @@ Usage: python cli.py [stage] --config [config module] --config [config module] .
 Example: python cli.py fit --config config.model.ket5-small --config config.data.khs
 
 Required keys:
-    - task: task module spec, str, e.g. 'task.khs'
-    - model: model module spec, str, e.g. 'model.ket5-small'
+    - task: task dataclass
+    - model: model dataclass
     - trainer: trainer configuration, dict
     - runtime_config: runtime configuration, dict
 
 Example config file:
     def config(cfg):
-        cfg['task'] = 'task.khs'
+        cfg['task'] = task_registry.get('khs')
         return cfg
 '''
 
@@ -22,6 +22,7 @@ import json
 from lightning.pytorch import Trainer
 
 import t2tpipe
+from t2tpipe.dataclass import Task, Model
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -43,7 +44,6 @@ def parse_config(config_modules: List[str], override: Optional[str] = None):
     if override is not None:
         cfg = json.loads(override)
     validate_cfg(cfg)
-    cfg = import_config_modules(cfg)
     return cfg
 
 def run_config_scripts(cfg, config_modules: List[str]):
@@ -53,15 +53,10 @@ def run_config_scripts(cfg, config_modules: List[str]):
     return cfg
 
 def validate_cfg(cfg: dict):
-    assert 'model' in cfg and isinstance(cfg['model'], str)
-    assert 'task' in cfg and isinstance(cfg['task'], str)
+    assert 'model' in cfg and isinstance(cfg['model'], Model)
+    assert 'task' in cfg and isinstance(cfg['task'], Task)
     assert 'trainer' in cfg and isinstance(cfg['trainer'], dict)
     assert 'runtime_config' in cfg and isinstance(cfg['runtime_config'], dict)
-
-def import_config_modules(cfg: dict):
-    cfg['model'] = importlib.import_module(cfg['model'])
-    cfg['task'] = importlib.import_module(cfg['task'])
-    return cfg
 
 def run_stage(stage, parsed_cfg: dict):
     model, dm = t2tpipe.setup(

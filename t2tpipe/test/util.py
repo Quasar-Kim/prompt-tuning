@@ -79,6 +79,7 @@ dummy_task = Task(
 )
 
 dummy_model = Model(
+    name='dummy',
     feature_converter=NoopFeatureConverter(),
     module=DummyModule(),
     tokenizer=DummyTokenizer(),
