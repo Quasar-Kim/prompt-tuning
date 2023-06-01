@@ -1,7 +1,7 @@
 from functools import partial
 from transformers import T5ForConditionalGeneration
 import torch
-from torch import optim
+from torch import optim, nn
 from torch.optim.lr_scheduler import LambdaLR
 
 from t2tpipe import feature_converter, Model
@@ -9,6 +9,39 @@ from t2tpipe.base import BaseLightningModule
 from t2tpipe.dataclass import EncDecSampleForTrain, EncDecSampleForInference, ModelInferenceOutput, ModelTrainOutput
 from tokenizer import KeT5Tokenizer
 
+
+class DummyModule(BaseLightningModule):
+    def __init__(self):
+        super().__init__()
+        self._model = nn.Linear(1, 100)
+    
+    def forward(self, batch: EncDecSampleForTrain):
+        x = batch.enc_x.unsqueeze(-1).float() # (B, N, 1)
+        y = self._model(x) # (B, N, 100)
+        return y, y.mean()
+
+    def _step_train(self, batch: EncDecSampleForTrain) -> ModelTrainOutput:
+        logits, loss = self(batch)
+        y_pred = torch.argmax(logits, dim=-1)
+        return ModelTrainOutput(
+            y=batch.y,
+            y_pred=y_pred,
+            loss=loss
+        )
+    
+    def _step_inference(self, batch: EncDecSampleForInference) -> ModelInferenceOutput:
+        raise NotImplementedError()
+    
+    def configure_optimizers(self):
+        optimizer = optim.Adam(self.parameters(), lr=1e-3)
+        return optimizer
+    
+dummy_model = Model(
+    name='dummy_model',
+    feature_converter=feature_converter.EncDecFeatureConverter(),
+    module=DummyModule(),
+    tokenizer=KeT5Tokenizer()
+)
 
 class InvSqrtScheduler(LambdaLR):
     def __init__(self, optimizer, warmup_epochs: int):

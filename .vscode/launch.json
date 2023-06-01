@@ -8,9 +8,9 @@
             "name": "CLI - test",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
-            "args": ["fit", "--config", "config/env/dev-cpu.yaml", "--config", "config/ket5-small-khs.yaml"],
+            "args": ["fit", "--config", "config.env.cpu_dev", "--config", "config.dummy_khs"],
             "justMyCode": false
         },
         {

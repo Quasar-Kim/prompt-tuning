@@ -1,4 +1,4 @@
-from typing import Any, List, Mapping, Optional, TYPE_CHECKING
+from typing import Any, List, Dict, Mapping, Optional, TYPE_CHECKING
 from dataclasses import dataclass
 from torch import Tensor
 
@@ -91,7 +91,7 @@ class Env:
     model: Model
     task: Task
     datamodule: T2tPipeDataModule
-    runtime_config: Mapping[str, Any]
+    runtime_config: Dict[str, Any]
     inference: bool
     pad_to: Optional[int] = None
 

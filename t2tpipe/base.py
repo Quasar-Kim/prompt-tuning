@@ -1,16 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import Mapping, Any, Mapping, List, Union, Tuple
-import dataclasses
+from typing import Any, List, Tuple
 
 import torch
 from torch import Tensor
 from lightning.pytorch import LightningModule
 
 from t2tpipe.dataclass import ModelTrainOutput, ModelInferenceOutput, Env
-from t2tpipe.postprocessor import PostProcessor
-from t2tpipe.metric import Metric
-from t2tpipe.tokenizer import Tokenizer
-from t2tpipe.postprocessor import NoopPostProcessor
+
 
 # TODO: support inference mode
 class BaseLightningModule(LightningModule, ABC):
@@ -24,31 +20,29 @@ class BaseLightningModule(LightningModule, ABC):
         self._env = env
         self._configured = True
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, batch_idx) -> dict:
         output = self._step_train(batch)
         # training_step must output dict / tensor / None
-        output_dict = output.__dict__
-        return output_dict
+        return output.__dict__
     
     def validation_step(self, batch, batch_idx) -> ModelTrainOutput:
         output = self._step_train(batch)
-        output_dict = dataclasses.asdict(output)
-        return output_dict
+        return output
     
     def test_step(self, batch, batch_idx) -> ModelTrainOutput:
         output = self._step_train(batch)
-        output_dict = dataclasses.asdict(output)
-        return output_dict
+        return output
     
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0):
-        return self._step_inference(batch)
-
-    @abstractmethod
-    def _step_inference(self, batch) -> ModelInferenceOutput:
-        pass
+        output = self._step_inference(batch)
+        return output
 
     @abstractmethod
     def _step_train(self, batch) -> ModelTrainOutput:
+        pass
+
+    @abstractmethod
+    def _step_inference(self, batch) -> ModelInferenceOutput:
         pass
 
     @abstractmethod
@@ -69,20 +63,18 @@ class BaseLightningModule(LightningModule, ABC):
 
     def on_validation_batch_end(
         self, 
-        outputs_dict: dict,
+        outputs: ModelTrainOutput,
         batch, 
         batch_idx
     ):
-        outputs = ModelTrainOutput(**outputs_dict)
         self._validation_outputs.append(outputs)
 
     def on_test_batch_end(
         self,
-        outputs_dict: dict,
+        outputs: ModelTrainOutput,
         batch,
         batch_idx
     ):
-        outputs = ModelTrainOutput(**outputs_dict)
         self._test_outputs.append(outputs)
 
     def on_validation_epoch_end(self):

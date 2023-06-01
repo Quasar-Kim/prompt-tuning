@@ -62,7 +62,10 @@ class T2tPipeDataModule(LightningDataModule):
     
     @property
     def train_dataloader(self) -> Callable:
-        if self.train_datapipe is None:
+        # NOTE: when this property is accessed by trainer,
+        # setup() is not called so train_datapipe is None
+        # so check env.task.source instead
+        if 'train' not in self.env.task.source:
             raise AttributeError
         return self._train_dataloader
 
@@ -75,7 +78,7 @@ class T2tPipeDataModule(LightningDataModule):
     
     @property
     def val_dataloader(self) -> Callable:
-        if self.validation_datapipe is None:
+        if 'validation' not in self.env.task.source:
             raise AttributeError
         return self._val_dataloader
 
@@ -88,7 +91,7 @@ class T2tPipeDataModule(LightningDataModule):
     
     @property
     def test_dataloader(self) -> Callable:
-        if self.test_datapipe is not None:
+        if 'test' not in self.env.task.source:
             raise AttributeError
         return self._test_dataloader
     

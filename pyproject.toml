@@ -22,6 +22,7 @@ peft = "^0.3.0"
 torch = "2.0.0"
 lightning = {version = "2.0.2", extras = ["extra"]}
 torchvision = "0.15.1"
+prettyprinter = "^0.18.0"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.22.0"
