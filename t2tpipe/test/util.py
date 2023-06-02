@@ -3,7 +3,7 @@ import torch
 from dataclasses import asdict
 from typing import Union
 
-from t2tpipe.dataclass import Env, ModelInferenceOutput, Task, Model
+from t2tpipe.dataclass import Env, ModelPredictionOutput, Task, Model
 from t2tpipe.datasource import IterableDataSource
 from t2tpipe.feature_converter import NoopFeatureConverter
 from t2tpipe.base import BaseLightningModule
@@ -18,7 +18,7 @@ class DummyModule(BaseLightningModule):
     def _step_train(self, batch):
         pass
 
-    def _step_inference(self, batch):
+    def _step_prediction(self, batch):
         pass
 
 class DummyTokenizer(Tokenizer):
@@ -90,7 +90,7 @@ dummy_env = Env(
     task=dummy_task,
     datamodule=DummyDataModule(),
     runtime_config={},
-    inference=False
+    prediction=False
 )
 
 def dataclass_equal(a, b):

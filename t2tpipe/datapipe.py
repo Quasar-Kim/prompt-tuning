@@ -1,7 +1,7 @@
 from __future__ import annotations
 import functools
 from itertools import islice
-from typing import Tuple, Dict, Any, Type
+from typing import Tuple, Dict, Any, Type, Union
 from abc import ABC, abstractmethod
 
 import torch
@@ -13,8 +13,8 @@ from torch.utils.data import IterDataPipe as TorchIterDataPipe
 from torch.utils.data.datapipes.iter.sharding import SHARDING_PRIORITIES
 
 from t2tpipe.mixin import SetupMixin
-from t2tpipe.dataclass import EncodedSampleForTrain, EncDecSampleForTrain
-from t2tpipe.type import TextSampleForTrain
+from t2tpipe.dataclass import EncodedSampleForTrain, EncDecSampleForTrain, EncodedSampleForPrediction, EncDecSampleForPrediction
+from t2tpipe.type import TextSampleForTrain, TextSampleForPrediction
 
 class DataPipe(ABC, TorchIterDataPipe, SetupMixin):
     def connect(self, dp: TransformDataPipe):
@@ -96,6 +96,8 @@ class DistributedShardingFilter(TransformDataPipe):
     DistributedSampler-like sharding datapipe.
 
     Distributed 훈련 환경에서 각 프로세스가 고유한 샘플을 가지도록 함.
+
+    Prediction Mode에서는 샤딩을 적용하지 않음.
     
     ---
     NOTE: 각 프로세스는 동일한 개수의 샘플을 받음.
@@ -114,13 +116,26 @@ class DistributedShardingFilter(TransformDataPipe):
     '''
 
     def __iter__(self):
+        if self._env.prediction:
+            yield from self._prediction_iter()
+        else:
+            yield from self._train_iter()
+
+    def _train_iter(self):
         rank = _get_rank()
         world_size = _get_world_size()
         n_global_samples = len(self)
         yield from islice(iter(self.source_dp), rank, n_global_samples, world_size)
 
+    def _prediction_iter(self):
+        yield from iter(self.source_dp)
+
     def __len__(self):
         assert hasattr(self.source_dp, '__len__'), 'DistributedShardingFilter requires source_dp to have length, but it does not'
+
+        if self._env.prediction:
+            return len(self.source_dp)
+        
         n_samples = len(self.source_dp)
         world_size = _get_world_size()
         n_global_samples = (n_samples // world_size) * world_size
@@ -163,7 +178,6 @@ class MappingKeyMapper(Mapper):
     def _map_key(self, sample: Dict[Any, Any]):
         return {self._mapping[k]: v for k, v in sample.items()}
 
-
 class MappingValueMapper(Mapper):
     def __init__(self, mapping: Dict[Any, Dict[Any, Any]], *args, **kwargs):
         self._mapping = mapping
@@ -180,27 +194,50 @@ class MappingValueMapper(Mapper):
             mapped[k] = v
         return mapped
 
-
 class FeatureTokenizer(Mapper):
     def __init__(self):
         super().__init__(fn=self._tokenize)
 
-    def _tokenize(self, sample: TextSampleForTrain):
+    def _tokenize(self, sample: Union[TextSampleForTrain, TextSampleForPrediction]):
+        if self._env.prediction:
+            return self._tokenize_prediction_sample(sample)
+        return self._tokenize_train_sample(sample)
+
+    def _tokenize_train_sample(self, sample: TextSampleForTrain):
         tokenizer = self._env.model.tokenizer
         return EncodedSampleForTrain(
             x=torch.tensor(tokenizer.encode(sample['x'])),
             y=torch.tensor(tokenizer.encode(sample['y']))
         )
+    
+    def _tokenize_prediction_sample(self, sample: EncodedSampleForPrediction):
+        tokenizer = self._env.model.tokenizer
+        return EncodedSampleForPrediction(
+            x=torch.tensor(tokenizer.encode(sample['x']))
+        )
 
 class Padder(Mapper):
+    '''
+    Deprecated, use feature converter-specific padder (e.g. PadderForEncDecModel)
+    '''
     def __init__(self, pad_to: int):
         super().__init__(fn=self._pad_sample)
         self._pad_to = pad_to
 
-    def _pad_sample(self, sample: EncodedSampleForTrain):
+    def _pad_sample(self, sample: Union[EncodedSampleForTrain, EncodedSampleForPrediction]):
+        if self._env.prediction:
+            return self._pad_prediction_sample(sample)
+        return self._pad_train_sample(sample)
+
+    def _pad_train_sample(self, sample: EncodedSampleForTrain):
         return EncodedSampleForTrain(
             x=self._pad_tensor(sample.x),
             y=self._pad_tensor(sample.y)
+        )
+    
+    def _pad_prediction_sample(self, sample: EncodedSampleForPrediction):
+        return EncodedSampleForPrediction(
+            x=self._pad_tensor(sample.x)
         )
         
     def _pad_tensor(self, t: torch.Tensor):
@@ -220,7 +257,12 @@ class PadderForEncDecModel(Mapper):
     def __init__(self):
         super().__init__(fn=self._pad_sample)
 
-    def _pad_sample(self, sample: EncDecSampleForTrain) -> EncDecSampleForTrain:
+    def _pad_sample(self, sample: Union[EncDecSampleForTrain, EncDecSampleForPrediction]):
+        if self._env.prediction:
+            return self._pad_prediction_sample(sample)
+        return self._pad_train_sample(sample)
+
+    def _pad_train_sample(self, sample: EncDecSampleForTrain) -> EncDecSampleForTrain:
         padded_enc_x, enc_attention_mask = self._pad_tensor(sample.enc_x)
         padded_dec_x, dec_attention_mask = self._pad_tensor(sample.dec_x)
         padded_y, _ = self._pad_tensor(sample.y)
@@ -230,6 +272,14 @@ class PadderForEncDecModel(Mapper):
             y=padded_y,
             enc_attention_mask=enc_attention_mask,
             dec_attention_mask=dec_attention_mask
+        )
+    
+    def _pad_prediction_sample(self, sample: EncDecSampleForPrediction) -> EncDecSampleForPrediction:
+        padded_enc_x, enc_attention_mask = self._pad_tensor(sample.enc_x)
+        return EncDecSampleForPrediction(
+            enc_x=padded_enc_x,
+            dec_x=sample.dec_x,
+            enc_attention_mask=enc_attention_mask
         )
     
     def _pad_tensor(self, t: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:

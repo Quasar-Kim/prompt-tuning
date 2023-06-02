@@ -22,7 +22,7 @@ else:
     Metric = None
 
 @dataclass
-class EncodedSampleForInference:
+class EncodedSampleForPrediction:
     x: Tensor
 
 @dataclass
@@ -31,11 +31,10 @@ class EncodedSampleForTrain:
     y: Tensor
 
 @dataclass
-class EncDecSampleForInference:
+class EncDecSampleForPrediction:
     enc_x: Tensor
     dec_x: Tensor
     enc_attention_mask: Optional[Tensor] = None
-    dec_attention_mask: Optional[Tensor] = None
 
 @dataclass
 class EncDecSampleForTrain:
@@ -46,8 +45,9 @@ class EncDecSampleForTrain:
     dec_attention_mask: Optional[Tensor] = None
 
 @dataclass
-class ModelInferenceOutput:
-    y: Tensor
+class ModelPredictionOutput:
+    x: Tensor
+    pred: Tensor
 
 @dataclass
 class ModelTrainOutput:
@@ -56,13 +56,14 @@ class ModelTrainOutput:
     loss: Tensor
 
 @dataclass
-class TextInferenceOutput:
-    y: List[str]
+class BatchTextPrediction:
+    x: List[str]
+    pred: List[str]
 
-@dataclass
-class TextTrainOutput:
-    y: List[str]
-    y_pred: List[str]
+# @dataclass
+# class TextTrainOutput:
+#     y: List[str]
+#     y_pred: List[str]
 
 @dataclass
 class PostProcessedOutput:
@@ -92,7 +93,7 @@ class Env:
     task: Task
     datamodule: T2tPipeDataModule
     runtime_config: Dict[str, Any]
-    inference: bool
+    prediction: bool
     pad_to: Optional[int] = None
 
 # @dataclass

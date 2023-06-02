@@ -5,12 +5,21 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "CLI - test",
+            "name": "CLI - fit dummy",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
-            "args": ["fit", "--config", "config.env.cpu_dev", "--config", "config.dummy_khs"],
+            "args": ["fit", "--config", "config.env.cpu_dev", "--config", "config.dummy"],
+            "justMyCode": false
+        },
+        {
+            "name": "CLI - predict dummy",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/cli.py",
+            "console": "integratedTerminal",
+            "args": ["predict", "--config", "config.env.cpu_dev", "--config", "config.dummy"],
             "justMyCode": false
         },
         {

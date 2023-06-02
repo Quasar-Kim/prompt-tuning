@@ -14,7 +14,7 @@ Example config file:
         return cfg
 '''
 
-from typing import List, Optional
+from typing import List, Dict, Optional
 import argparse
 import importlib
 import json
@@ -22,9 +22,10 @@ from pathlib import Path
 
 from prettyprinter import cpprint
 from lightning.pytorch import Trainer, seed_everything
+import pandas as pd
 
 import t2tpipe
-from t2tpipe.dataclass import Task, Model
+from t2tpipe.dataclass import Task, Model, BatchTextPrediction
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -89,8 +90,33 @@ def run_stage(stage, parsed_cfg: dict, ckpt_path: Optional[str] = None):
     )
     trainer = Trainer(**parsed_cfg['trainer'])
     report_config(parsed_cfg, log_dir=trainer.log_dir)
-    stage = getattr(trainer, stage)
-    stage(model, dm, ckpt_path=ckpt_path)
+    stage_fn = getattr(trainer, stage)
+    outputs = stage_fn(model, dm, ckpt_path=ckpt_path)
+    if stage == 'predict':
+        save_predictions(outputs, trainer.log_dir)
+
+def save_predictions(outputs: List[BatchTextPrediction], log_dir: Optional[str]):
+    if log_dir is None:
+        log_path = Path.cwd() / 'predictions.csv'
+    else:
+        log_path = Path(log_dir) / 'predictions.csv'
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    df = predictions_to_df(outputs)
+    df.to_csv(log_path, index=False)
+    print('predictions saved to', log_path)
+
+def predictions_to_df(outputs: List[BatchTextPrediction]) -> pd.DataFrame:
+    collated_outputs = collate_outputs(outputs)
+    df = pd.DataFrame(collated_outputs.__dict__)
+    return df
+
+def collate_outputs(outputs: List[BatchTextPrediction]) -> BatchTextPrediction:
+    x = []
+    pred = []
+    for output in outputs:
+        x += output.x
+        pred += output.pred
+    return BatchTextPrediction(x=x, pred=pred)
 
 if __name__ == '__main__':
     args = parse_arguments()

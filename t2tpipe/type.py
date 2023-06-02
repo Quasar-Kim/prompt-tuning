@@ -1,6 +1,6 @@
 from typing import TypedDict
 
-class TextSampleForInference(TypedDict):
+class TextSampleForPrediction(TypedDict):
     x: str
 
 class TextSampleForTrain(TypedDict):

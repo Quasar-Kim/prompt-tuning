@@ -17,6 +17,7 @@ class T2tPipeDataModule(LightningDataModule):
     train_datapipe: Optional[TorchIterDataPipe] = None
     validation_datapipe: Optional[TorchIterDataPipe] = None
     test_datapipe: Optional[TorchIterDataPipe] = None
+    prediction_datapipe: Optional[TorchIterDataPipe] = None
 
     def configure(self, env: Env):
         self.env = env
@@ -30,14 +31,14 @@ class T2tPipeDataModule(LightningDataModule):
         assert 'is_gpu' in self.env.runtime_config and isinstance(self.env.runtime_config['is_gpu'], bool)
 
     def setup(self, stage):
-        if stage not in ['fit', 'validate', 'test']:
-            raise NotImplementedError
         if stage == 'fit':
             self.train_datapipe = self._build_datapipe('train')
         if (stage == 'fit' or stage == 'validate') and 'validation' in self.env.task.source:
             self.validation_datapipe = self._build_datapipe('validation')
         if stage == 'test':
             self.test_datapipe = self._build_datapipe('test')
+        if stage == 'predict':
+            self.prediction_datapipe = self._build_datapipe('prediction')
 
     def _build_datapipe(self, stage: str) -> TorchIterDataPipe:
         assert stage in self.env.task.source, f'No data source for stage {stage}'
@@ -99,6 +100,19 @@ class T2tPipeDataModule(LightningDataModule):
         assert self.test_datapipe is not None
         return self._create_dataloader(
             self.test_datapipe,
+            shuffle=False
+        )
+    
+    @property
+    def predict_dataloader(self) -> Callable:
+        if 'prediction' not in self.env.task.source:
+            raise AttributeError
+        return self._predict_dataloader
+    
+    def _predict_dataloader(self):
+        assert self.prediction_datapipe is not None
+        return self._create_dataloader(
+            self.prediction_datapipe,
             shuffle=False
         )
     

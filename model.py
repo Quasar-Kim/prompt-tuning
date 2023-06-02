@@ -5,7 +5,7 @@ from torch.optim.lr_scheduler import LambdaLR
 
 from t2tpipe import feature_converter, Model
 from t2tpipe.base import BaseLightningModule
-from t2tpipe.dataclass import EncDecSampleForTrain, EncDecSampleForInference, ModelInferenceOutput, ModelTrainOutput
+from t2tpipe.dataclass import EncDecSampleForTrain, EncDecSampleForPrediction, ModelPredictionOutput, ModelTrainOutput
 from tokenizer import KeT5Tokenizer
 
 
@@ -42,7 +42,7 @@ class KeT5Module(BaseLightningModule):
             loss=output.loss
         )
     
-    def _step_inference(self, batch: EncDecSampleForInference) -> ModelInferenceOutput:
+    def _step_prediction(self, batch: EncDecSampleForPrediction) -> ModelPredictionOutput:
         raise NotImplementedError()
     
     def configure_optimizers(self):

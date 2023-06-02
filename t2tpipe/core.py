@@ -5,13 +5,13 @@ from t2tpipe.dataclass import Task, Model, Env
 from t2tpipe.datamodule import T2tPipeDataModule
 from t2tpipe.postprocessor import NoopPostProcessor
 
-def setup(*, model: Model, task: Task, runtime_config: Dict[str, Any]):
+def setup(*, model: Model, task: Task, runtime_config: Dict[str, Any], prediction: bool = False):
     env = Env(
         model=model,
         task=task,
         datamodule=T2tPipeDataModule(),
         runtime_config=runtime_config,
-        inference=False,
+        prediction=prediction,
         pad_to=task.pad_to
     )
     env = _set_defaults(env)

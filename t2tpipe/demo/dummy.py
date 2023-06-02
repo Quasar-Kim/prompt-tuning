@@ -6,7 +6,7 @@ from torch import nn, optim
 from t2tpipe import datasource, datapipe, postprocessor, metric, feature_converter, Task, Model
 from t2tpipe.base import BaseLightningModule
 from t2tpipe.tokenizer import Tokenizer
-from t2tpipe.dataclass import EncDecSampleForTrain, EncDecSampleForInference, ModelInferenceOutput, ModelTrainOutput
+from t2tpipe.dataclass import EncDecSampleForTrain, EncDecSampleForPrediction, ModelPredictionOutput, ModelTrainOutput
 from t2tpipe.type import TextSampleForTrain
 
 class DummyTokenizer(Tokenizer):    
@@ -68,8 +68,11 @@ class DummyModule(BaseLightningModule):
             loss=loss
         )
     
-    def _step_inference(self, batch: EncDecSampleForInference) -> ModelInferenceOutput:
-        raise NotImplementedError()
+    def _step_prediction(self, batch: EncDecSampleForPrediction) -> ModelPredictionOutput:
+        return ModelPredictionOutput(
+            x=batch.enc_x,
+            pred=batch.enc_x
+        )
     
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=1e-3)
