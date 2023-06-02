@@ -48,7 +48,7 @@ from xla_strategy.accelerator import XlaPjrtAccelerator
 from xla_strategy.launcher import XlaPjrtLauncher
 from xla_strategy.precision import XlaPrecision
 from xla_strategy.environment import XlaPjrtEnvironment
-from util import suppress_stdout
+from xla_strategy.util import suppress_stdout
 
 if TYPE_CHECKING and XlaPjrtAccelerator.is_available():
     from torch_xla.distributed.parallel_loader import MpDeviceLoader

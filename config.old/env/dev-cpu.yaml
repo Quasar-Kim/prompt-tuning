@@ -1,4 +1,0 @@
-trainer:
-  accelerator: cpu
-experiment:
-  batch_size: 1

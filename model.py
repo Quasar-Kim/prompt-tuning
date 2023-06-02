@@ -1,7 +1,10 @@
+from functools import partial
+
 from transformers import T5ForConditionalGeneration
 import torch
 from torch import optim
 from torch.optim.lr_scheduler import LambdaLR
+from peft import get_peft_model, LoraConfig, TaskType
 
 from t2tpipe import feature_converter, Model
 from t2tpipe.base import BaseLightningModule
@@ -53,13 +56,67 @@ class KeT5Module(BaseLightningModule):
         lr_scheduler = InvSqrtScheduler(optimizer, warmup_epochs=cfg['num_warmup_epochs'])
         return { 'optimizer': optimizer, 'lr_scheduler': lr_scheduler }
     
+    @property
+    def xla_fsdp_auto_wrap_policy(self):
+        from torch_xla.distributed.fsdp.wrap import transformer_auto_wrap_policy # type: ignore
+        from transformers.models.t5.modeling_t5 import T5Block
+        return partial(transformer_auto_wrap_policy, transformer_layer_cls={T5Block})
+    
 class KeT5SmallModule(KeT5Module):
     def __init__(self):
         super().__init__('KETI-AIR/ke-t5-small')
+
+class KeT5BaseModule(KeT5Module):
+    def __init__(self):
+        super().__init__('KETI-AIR/ke-t5-base')
+
+class KeT5LargeModule(KeT5Module):
+    def __init__(self):
+        super().__init__('KETI-AIR/ke-t5-large')
+
+def apply_lora(module: BaseLightningModule):
+    assert hasattr(module, 'module')
+    lora_config = LoraConfig(
+        task_type=TaskType.SEQ_2_SEQ_LM,
+        inference_mode=False,
+        r=8,
+        lora_alpha=32,
+        lora_dropout=0.1
+    )
+    module.module = get_peft_model(module.module, lora_config)
+    return module
 
 ket5_small = Model(
     name='ket5_small',
     feature_converter=feature_converter.EncDecFeatureConverter(),
     module=KeT5SmallModule(),
+    tokenizer=KeT5Tokenizer()
+)
+
+ket5_base = Model(
+    name='ket5_base',
+    feature_converter=feature_converter.EncDecFeatureConverter(),
+    module=KeT5BaseModule(),
+    tokenizer=KeT5Tokenizer()
+)
+
+ket5_base_lora = Model(
+    name='ket5_base_lora',
+    feature_converter=feature_converter.EncDecFeatureConverter(),
+    module=apply_lora(KeT5BaseModule()),
+    tokenizer=KeT5Tokenizer()
+)
+
+ket5_large = Model(
+    name='ket5_large',
+    feature_converter=feature_converter.EncDecFeatureConverter(),
+    module=KeT5SmallModule(),
+    tokenizer=KeT5Tokenizer()
+)
+
+ket5_large_lora = Model(
+    name='ket5_large_lora',
+    feature_converter=feature_converter.EncDecFeatureConverter(),
+    module=apply_lora(KeT5SmallModule()),
     tokenizer=KeT5Tokenizer()
 )

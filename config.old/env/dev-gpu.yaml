@@ -1,4 +1,0 @@
-trainer:
-  accelerator: gpu
-experiment:
-  is_gpu: True
