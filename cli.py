@@ -32,6 +32,7 @@ def parse_arguments():
     parser.add_argument('--config', type=str, action='append', help='config scripts')
     parser.add_argument('--override', type=str)
     parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--ckpt', type=str, default=None)
 
     args = parser.parse_args()
     return args
@@ -80,7 +81,7 @@ def report_config(parsed_cfg: dict, log_dir: Optional[str]):
     with log_path.open('w') as f:
         json.dump(config_for_reporting, f, indent=4)
 
-def run_stage(stage, parsed_cfg: dict):
+def run_stage(stage, parsed_cfg: dict, ckpt_path: Optional[str] = None):
     model, dm = t2tpipe.setup(
         model=parsed_cfg['model'],
         task=parsed_cfg['task'],
@@ -89,10 +90,10 @@ def run_stage(stage, parsed_cfg: dict):
     trainer = Trainer(**parsed_cfg['trainer'])
     report_config(parsed_cfg, log_dir=trainer.log_dir)
     stage = getattr(trainer, stage)
-    stage(model, dm)
+    stage(model, dm, ckpt_path=ckpt_path)
 
 if __name__ == '__main__':
     args = parse_arguments()
     parsed_cfg = parse_config(args.config, args.override)
     seed_everything(args.seed)
-    run_stage(args.stage, parsed_cfg)
+    run_stage(args.stage, parsed_cfg, ckpt_path=args.ckpt)

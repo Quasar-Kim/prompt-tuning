@@ -1,11 +1,11 @@
-from typing import Mapping, Any
+from typing import Dict, Any
 import dataclasses
 
 from t2tpipe.dataclass import Task, Model, Env
 from t2tpipe.datamodule import T2tPipeDataModule
 from t2tpipe.postprocessor import NoopPostProcessor
 
-def setup(*, model: Model, task: Task, runtime_config: Mapping[str, Any]):
+def setup(*, model: Model, task: Task, runtime_config: Dict[str, Any]):
     env = Env(
         model=model,
         task=task,

@@ -85,10 +85,10 @@ class BaseLightningModule(LightningModule, ABC):
 
     def _log_metrics(self, outputs: List[ModelTrainOutput], stage: str):
         collated_outputs = self._collate_outputs(outputs)
-        outputs.clear()
         cpu_outputs = _model_train_output_to_cpu(collated_outputs)
-        self._log_loss(cpu_outputs.loss, stage=stage)
         ys, y_preds = self._postprocess_model_train_output(cpu_outputs)
+        outputs.clear()
+        self._log_loss(cpu_outputs.loss, stage=stage)
         self._compute_and_log_metrics(ys, y_preds, stage=stage)
 
     def _collate_outputs(self, outputs: List[ModelTrainOutput]) -> ModelTrainOutput:
@@ -122,7 +122,7 @@ class BaseLightningModule(LightningModule, ABC):
         )
         postprocessor = self._env.task.postprocessor
         assert postprocessor is not None
-        postprocessed = [postprocessor(s) for s in decoded]
+        postprocessed = [postprocessor(sample) for sample in decoded]
         out = torch.tensor(postprocessed)
         return out
 
