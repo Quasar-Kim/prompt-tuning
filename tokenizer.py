@@ -1,16 +1,15 @@
-import os
-from transformers import T5Tokenizer
+from typing import List
 
-tokenizer = T5Tokenizer.from_pretrained('KETI-AIR/ke-t5-small')
+from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
+from t2tpipe.tokenizer import Tokenizer
+    
+    
+class HfTokenizer(Tokenizer):
+    _tokenizer: PreTrainedTokenizerBase
 
-class KeT5Tokenizer:
-    def __init__(self, parallelism=False):
-        if not parallelism:
-            os.environ['TOKENIZERS_PARALLELISM'] = 'false'
-        self._tokenizer = T5Tokenizer.from_pretrained('KETI-AIR/ke-t5-small')
-        self.encode = self._encode
-        self.encode_batch = self._encode
+    def __init__(self, model_name: str):
+        self._tokenizer = AutoTokenizer.from_pretrained(model_name)
     
     @property
     def pad_token_id(self):
@@ -26,8 +25,7 @@ class KeT5Tokenizer:
     
     @property
     def bos_token_id(self):
-        # implementation detail: bos token == pad token
-        return self._tokenizer.pad_token_id
+        return self._tokenizer.bos_token_id
     
     @property
     def pad_token(self):
@@ -43,18 +41,28 @@ class KeT5Tokenizer:
     
     @property
     def bos_token(self):
-        # implementation detail: bos token == pad token
-        return self._tokenizer.pad_token_id
-
-    def _encode(self, text: str, pad_to: int | None = None, truncate = False):
-        if pad_to is not None:
-            encoded = self._tokenizer(text, padding='max_length', truncation=truncate, max_length=pad_to)
-        else:
-            encoded = self._tokenizer(text)
-        return encoded
-
-    def decode(self, token_ids: list[int], remove_special_tokens: bool = False):
-        return self._tokenizer.decode(token_ids, skip_special_tokens=remove_special_tokens)
+        return self._tokenizer.bos_token
     
-    def decode_batch(self, batch_token_ids: list[list[int]], **kwargs):
-        return [self.decode(token_ids, **kwargs) for token_ids in batch_token_ids]
+    def encode(self, text: str) -> List[int]:
+        encoded = self._tokenizer.encode(text, add_special_tokens=False)
+        return encoded
+    
+    def decode(self, ids: List[int], remove_special_tokens: bool = False) -> str:
+        return self._tokenizer.decode(ids, skip_special_tokens=remove_special_tokens)
+
+    def decode_batch(self, batch_ids: List[List[int]], remove_special_tokens: bool = False) -> List[str]:
+        return self._tokenizer.batch_decode(batch_ids, skip_special_tokens=remove_special_tokens)
+    
+class KeT5Tokenizer(HfTokenizer):
+    def __init__(self):
+        super().__init__('KETI-AIR/ke-t5-small')
+
+    @property
+    def bos_token_id(self):
+        # implementation detail
+        return self.pad_token_id
+
+    @property
+    def bos_token(self):
+        # implementation detail
+        return self.pad_token        

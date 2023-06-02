@@ -1,3 +1,6 @@
 __pycache__
 .pytest_cache
 wandb
+tinker
+lightning_logs
+config.yaml
