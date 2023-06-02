@@ -14,10 +14,13 @@ fi
 ~/.local/bin/poetry config installer.max-workers 10
 ~/.local/bin/poetry install -q --no-root --with xla
 
-# install lightning 2.1.0.dev with multithreading patch
+# install lightning 2.1.0.dev
 ~/.local/bin/poetry remove -q lightning
-git clone --quiet https://github.com/quasar-kim/lightning.git -b multithreading-chkpt
-~/.local/bin/poetry add -q "./lightning"[extra]
+git clone --quiet https://github.com/Lightning-AI/lightning
+cd lightning
+git checkout 255b188
+cd ..
+~/.local/bin/poetry add -q "./lightning"
 
 # copy parquet files to repository
 mkdir -p /kaggle/working/prompt-tuning/data/khs
