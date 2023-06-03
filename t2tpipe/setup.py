@@ -1,7 +1,7 @@
 from typing import Dict, Any
 import dataclasses
 
-from t2tpipe.dataclass import Task, Model, Env
+from t2tpipe.dataclass import Task, Model, Env, Slot
 from t2tpipe.datamodule import T2tPipeDataModule
 from t2tpipe.postprocessor import NoopPostProcessor
 
@@ -11,7 +11,7 @@ def setup(
     model: Model,
     task: Task,
     runtime_config: Dict[str, Any],
-    prediction: bool = False
+    prediction: bool = False,
 ):
     env = Env(
         model=model,
@@ -22,6 +22,7 @@ def setup(
         pad_to=task.pad_to,
     )
     env = _set_defaults(env)
+    env = _setup_slots(env)
     _setup_model(env)
     _setup_task(env)
     _setup_datamodule(env)
@@ -42,6 +43,31 @@ def _set_defaults(env: Env) -> Env:
         )
     if env.task.metrics is None:
         env = dataclasses.replace(env, task=dataclasses.replace(env.task, metrics=[]))
+    if env.model.pipes is None:
+        env = dataclasses.replace(env, model=dataclasses.replace(env.model, pipes={}))
+    return env
+
+
+def _setup_slots(env: Env) -> Env:
+    pipes = []
+    inserted_pipes = env.model.pipes
+    assert inserted_pipes is not None
+    for pipe in env.task.pipes:
+        if isinstance(pipe, Slot):
+            try:
+                inserted_pipe = inserted_pipes[pipe.name]
+                pipes.append(inserted_pipe)
+            except KeyError:
+                if pipe.required:
+                    raise ValueError(f"Required slot {pipe.name} is not provided.")
+                # omit optional slot
+        else:
+            pipes.append(pipe)
+
+    env = dataclasses.replace(
+        env,
+        task=dataclasses.replace(env.task, pipes=pipes),
+    )
     return env
 
 

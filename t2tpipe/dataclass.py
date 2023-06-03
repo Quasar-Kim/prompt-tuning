@@ -97,6 +97,7 @@ class Model:
     module: BaseLightningModule
     tokenizer: Tokenizer
     padder: Optional[TransformDataPipe] = None
+    pipes: Optional[Dict[str, TransformDataPipe]] = None
 
 
 @dataclass
@@ -107,6 +108,12 @@ class Env:
     runtime_config: Dict[str, Any]
     prediction: bool
     pad_to: Optional[int] = None
+
+
+@dataclass
+class Slot:
+    name: str
+    required: bool = False
 
 
 # @dataclass
