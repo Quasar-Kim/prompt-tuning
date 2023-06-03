@@ -7,7 +7,6 @@ from t2tpipe.mixin import SetupMixin
 
 
 class Metric(ABC, SetupMixin):
-
     @property
     @abstractmethod
     def name(self) -> str:
@@ -22,32 +21,34 @@ class Metric(ABC, SetupMixin):
     def __call__(self, y: Tensor, y_pred: Tensor) -> Tensor:
         pass
 
+
 class Accuracy(Metric):
     @property
     def name(self):
-        return 'accuracy'
-    
+        return "accuracy"
+
     @property
     def reduce_fx(self):
-        return 'mean'
-    
+        return "mean"
+
     def __call__(self, y: Tensor, y_pred: Tensor) -> Tensor:
         assert y.shape == y_pred.shape
         correct = torch.sum(y == y_pred)
         total = y.numel()
         return correct.float() / total
-    
+
+
 class F1Macro(Metric):
     _n_classes: int
 
     @property
     def name(self):
-        return 'f1-macro'
-    
+        return "f1-macro"
+
     @property
     def reduce_fx(self):
-        return 'mean'
-    
+        return "mean"
+
     def __init__(self, n_classes) -> None:
         self._n_classes = n_classes
 
@@ -66,6 +67,3 @@ class F1Macro(Metric):
             f1 = torch.nan_to_num(2 * (precision * recall) / (precision + recall))
             f1s.append(f1)
         return torch.stack(f1s).mean()
-
-    
-

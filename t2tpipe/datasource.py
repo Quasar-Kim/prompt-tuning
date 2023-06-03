@@ -6,10 +6,12 @@ import pandas as pd
 
 from t2tpipe.datapipe import DataPipe
 
+
 class DataSource(DataPipe):
     @abstractmethod
     def __len__(self) -> int:
         pass
+
 
 class IterableDataSource(DataSource):
     def __init__(self, iterable):
@@ -20,7 +22,8 @@ class IterableDataSource(DataSource):
 
     def __len__(self):
         return len(self._iterable)
-    
+
+
 class ParquetDataSource(DataSource):
     def __init__(self, path: str):
         self._path = Path(path)
@@ -30,10 +33,10 @@ class ParquetDataSource(DataSource):
         self._df = pd.read_parquet(self._path)
 
     def __iter__(self):
-        assert self._df is not None, 'setup() must be called before __iter__()'
+        assert self._df is not None, "setup() must be called before __iter__()"
         for row in self._df.itertuples(index=False):
             yield row._asdict()
 
     def __len__(self):
-        assert self._df is not None, 'setup() must be called before __len__()'
+        assert self._df is not None, "setup() must be called before __len__()"
         return len(self._df)

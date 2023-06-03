@@ -8,7 +8,12 @@ from peft import get_peft_model, LoraConfig, TaskType
 
 from t2tpipe import feature_converter, Model
 from t2tpipe.base import BaseLightningModule
-from t2tpipe.dataclass import EncDecSampleForTrain, EncDecSampleForPrediction, ModelPredictionOutput, ModelTrainOutput
+from t2tpipe.dataclass import (
+    EncDecSampleForTrain,
+    EncDecSampleForPrediction,
+    ModelPredictionOutput,
+    ModelTrainOutput,
+)
 from tokenizer import KeT5Tokenizer
 
 
@@ -20,103 +25,110 @@ class InvSqrtScheduler(LambdaLR):
     def _lr_lambda(self, epoch):
         if epoch < self._warmup_epochs:
             return epoch / self._warmup_epochs
-        return (epoch ** -0.5) * (self._warmup_epochs ** 0.5)
+        return (epoch**-0.5) * (self._warmup_epochs**0.5)
+
 
 class KeT5Module(BaseLightningModule):
     def __init__(self, model_name: str):
         super().__init__()
         self.module = T5ForConditionalGeneration.from_pretrained(model_name)
-    
+
     def forward(self, batch: EncDecSampleForTrain):
         return self.module(
             input_ids=batch.enc_x,
             attention_mask=batch.enc_attention_mask,
             decoder_input_ids=batch.dec_x,
             decoder_attention_mask=batch.dec_attention_mask,
-            labels=batch.y
-        ) # type: ignore
+            labels=batch.y,
+        )  # type: ignore
 
     def _step_train(self, batch: EncDecSampleForTrain) -> ModelTrainOutput:
         output = self(batch)
         y_pred = torch.argmax(output.logits, dim=-1)
-        return ModelTrainOutput(
-            y=batch.y,
-            y_pred=y_pred,
-            loss=output.loss
-        )
-    
-    def _step_prediction(self, batch: EncDecSampleForPrediction) -> ModelPredictionOutput:
+        return ModelTrainOutput(y=batch.y, y_pred=y_pred, loss=output.loss)
+
+    def _step_prediction(
+        self, batch: EncDecSampleForPrediction
+    ) -> ModelPredictionOutput:
         raise NotImplementedError()
-    
+
     def configure_optimizers(self):
         cfg = self._env.runtime_config
-        assert 'lr' in cfg
-        assert 'num_warmup_epochs' in cfg
-        optimizer = optim.Adam(self.parameters(), lr=cfg['lr'])
-        lr_scheduler = InvSqrtScheduler(optimizer, warmup_epochs=cfg['num_warmup_epochs'])
-        return { 'optimizer': optimizer, 'lr_scheduler': lr_scheduler }
-    
+        assert "lr" in cfg
+        assert "num_warmup_epochs" in cfg
+        optimizer = optim.Adam(self.parameters(), lr=cfg["lr"])
+        lr_scheduler = InvSqrtScheduler(
+            optimizer, warmup_epochs=cfg["num_warmup_epochs"]
+        )
+        return {"optimizer": optimizer, "lr_scheduler": lr_scheduler}
+
     @property
     def xla_fsdp_auto_wrap_policy(self):
-        from torch_xla.distributed.fsdp.wrap import transformer_auto_wrap_policy # type: ignore
+        from torch_xla.distributed.fsdp.wrap import transformer_auto_wrap_policy  # type: ignore
         from transformers.models.t5.modeling_t5 import T5Block
+
         return partial(transformer_auto_wrap_policy, transformer_layer_cls={T5Block})
-    
+
+
 class KeT5SmallModule(KeT5Module):
     def __init__(self):
-        super().__init__('KETI-AIR/ke-t5-small')
+        super().__init__("KETI-AIR/ke-t5-small")
+
 
 class KeT5BaseModule(KeT5Module):
     def __init__(self):
-        super().__init__('KETI-AIR/ke-t5-base')
+        super().__init__("KETI-AIR/ke-t5-base")
+
 
 class KeT5LargeModule(KeT5Module):
     def __init__(self):
-        super().__init__('KETI-AIR/ke-t5-large')
+        super().__init__("KETI-AIR/ke-t5-large")
+
 
 def apply_lora(module: BaseLightningModule):
-    assert hasattr(module, 'module')
+    assert hasattr(module, "module")
     lora_config = LoraConfig(
         task_type=TaskType.SEQ_2_SEQ_LM,
         inference_mode=False,
         r=8,
         lora_alpha=32,
-        lora_dropout=0.1
+        lora_dropout=0.1,
     )
     module.module = get_peft_model(module.module, lora_config)
     return module
 
+
 ket5_small = Model(
-    name='ket5_small',
+    name="ket5_small",
     feature_converter=feature_converter.EncDecFeatureConverter(),
     module=KeT5SmallModule(),
-    tokenizer=KeT5Tokenizer()
+    tokenizer=KeT5Tokenizer(),
 )
 
 ket5_base = Model(
-    name='ket5_base',
+    name="ket5_base",
     feature_converter=feature_converter.EncDecFeatureConverter(),
     module=KeT5BaseModule(),
-    tokenizer=KeT5Tokenizer()
+    tokenizer=KeT5Tokenizer(),
 )
 
 ket5_base_lora = Model(
-    name='ket5_base_lora',
+    name="ket5_base_lora",
     feature_converter=feature_converter.EncDecFeatureConverter(),
     module=apply_lora(KeT5BaseModule()),
-    tokenizer=KeT5Tokenizer()
+    tokenizer=KeT5Tokenizer(),
 )
 
 ket5_large = Model(
-    name='ket5_large',
+    name="ket5_large",
     feature_converter=feature_converter.EncDecFeatureConverter(),
     module=KeT5SmallModule(),
-    tokenizer=KeT5Tokenizer()
+    tokenizer=KeT5Tokenizer(),
 )
 
 ket5_large_lora = Model(
-    name='ket5_large_lora',
+    name="ket5_large_lora",
     feature_converter=feature_converter.EncDecFeatureConverter(),
     module=apply_lora(KeT5SmallModule()),
-    tokenizer=KeT5Tokenizer()
+    tokenizer=KeT5Tokenizer(),
 )

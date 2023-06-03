@@ -18,11 +18,12 @@ import torch
 from lightning.pytorch.accelerators.accelerator import Accelerator
 from lightning.fabric.utilities.exceptions import MisconfigurationException
 
+
 class XlaPjrtAccelerator(Accelerator):
     def __init__(self) -> None:
         super().__init__()
         if not XlaPjrtAccelerator.is_available():
-            raise MisconfigurationException('XLA accelerator not available')
+            raise MisconfigurationException("XLA accelerator not available")
 
     def setup_device(self, device: torch.device) -> None:
         pass
@@ -30,23 +31,25 @@ class XlaPjrtAccelerator(Accelerator):
     def get_device_stats(self, device: torch.device) -> Dict[str, Any]:
         try:
             import torch_xla.core.xla_model as xm
+
             memory_info = xm.get_memory_info(device)
             free_memory = memory_info["kb_free"]
             peak_memory = memory_info["kb_total"] - free_memory
         except:
-            free_memory = 'unknown'
-            peak_memory = 'unknown'
+            free_memory = "unknown"
+            peak_memory = "unknown"
         return {
             "avg. free memory (MB)": free_memory,
             "avg. peak memory (MB)": peak_memory,
         }
-    
+
     def teardown(self) -> None:
         pass
 
     @staticmethod
     def is_available():
         import torch_xla.core.xla_env_vars as xenv
+
         if xenv.PJRT_DEVICE not in os.environ:
             return False
         return XlaPjrtAccelerator.auto_device_count() > 0
@@ -55,27 +58,28 @@ class XlaPjrtAccelerator(Accelerator):
     def auto_device_count() -> int:
         try:
             import torch_xla.core.xla_env_vars as xenv
+
             dev_type = os.environ[xenv.PJRT_DEVICE]
-            if dev_type == 'CPU':
+            if dev_type == "CPU":
                 dev_count = int(os.environ.get(xenv.CPU_NUM_DEVICES, 1))
-            elif dev_type == 'GPU':
+            elif dev_type == "GPU":
                 dev_count = int(os.environ.get(xenv.GPU_NUM_DEVICES, 1))
-            elif dev_type == 'TPU':
+            elif dev_type == "TPU":
                 dev_count = int(os.environ.get(xenv.TPU_NUM_DEVICES, 8))
             else:
-                raise ValueError(f'{xenv.PJRT_DEVICE} is incorrect')
+                raise ValueError(f"{xenv.PJRT_DEVICE} is incorrect")
             return dev_count
         except ImportError:
             return 0
-    
+
     @staticmethod
     def parse_devices(devices: Any) -> int:
         if isinstance(devices, str):
             devices = int(devices)
         if not isinstance(devices, int) or devices <= 0:
-            raise TypeError('`devices` should be int >= 0')
+            raise TypeError("`devices` should be int >= 0")
         return devices
-    
+
     @staticmethod
     def get_parallel_devices(dev_indices: int) -> List[torch.device]:
-        return [torch.device('xla', index=i) for i in range(dev_indices)]
+        return [torch.device("xla", index=i) for i in range(dev_indices)]

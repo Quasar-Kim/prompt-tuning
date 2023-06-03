@@ -36,18 +36,26 @@ from xla_strategy.accelerator import XlaPjrtAccelerator
 
 log = logging.getLogger(__name__)
 
+
 class XlaPjrtLauncher(_MultiProcessingLauncher):
     def __init__(self, strategy: ParallelStrategy) -> None:
         if not XlaPjrtAccelerator.is_available():
-            raise MisconfigurationException('XLA accelerator not available')
-        super().__init__(strategy=strategy, start_method='fork')
+            raise MisconfigurationException("XLA accelerator not available")
+        super().__init__(strategy=strategy, start_method="fork")
 
     @property
     def is_interactive_compatible(self) -> bool:
         return True
-    
-    def launch(self, function: Callable[..., Any], *args: Any, trainer: Optional["pl.Trainer"] = None, **kwargs: Any) -> Any:
+
+    def launch(
+        self,
+        function: Callable[..., Any],
+        *args: Any,
+        trainer: Optional["pl.Trainer"] = None,
+        **kwargs: Any,
+    ) -> Any:
         import torch_xla.distributed.xla_multiprocessing as xmp
+
         return_queue = mp.Manager().Queue()
         spawn_kwargs = {}
         nprocs = self._strategy.num_processes
@@ -75,7 +83,7 @@ class XlaPjrtLauncher(_MultiProcessingLauncher):
 
         self._recover_results_in_main_process(worker_output, trainer)
         return worker_output.trainer_results
-        
+
     def _wrapping_function(
         self,
         # XLA's multiprocessing returns the global index, not the local index as torch's multiprocessing
@@ -89,7 +97,8 @@ class XlaPjrtLauncher(_MultiProcessingLauncher):
         global_states: Optional[_GlobalStateSnapshot] = None,
     ) -> None:
         import torch_xla.core.xla_model as xm
-        log.debug(f'{xm.get_ordinal()}: process started')
+
+        log.debug(f"{xm.get_ordinal()}: process started")
 
         xla_devices = xm.get_xla_supported_devices()
         assert xla_devices is not None
@@ -98,7 +107,9 @@ class XlaPjrtLauncher(_MultiProcessingLauncher):
             # so when there's more than one (multithreading), objects need to be deep-copied
             import copy
 
-            trainer, function, args, kwargs = copy.deepcopy((trainer, function, args, kwargs))
+            trainer, function, args, kwargs = copy.deepcopy(
+                (trainer, function, args, kwargs)
+            )
         results = function(*args, **kwargs)
 
         if trainer is not None:
@@ -109,11 +120,13 @@ class XlaPjrtLauncher(_MultiProcessingLauncher):
 
         _rank_teardown(self._strategy.local_rank)
 
-    def _collect_rank_zero_results(self, trainer: "pl.Trainer", results: Any) -> Optional["_WorkerOutput"]:
+    def _collect_rank_zero_results(
+        self, trainer: "pl.Trainer", results: Any
+    ) -> Optional["_WorkerOutput"]:
         rank_zero_debug("Collecting results from rank 0 process.")
         checkpoint_callback = trainer.checkpoint_callback
         best_model_path = (
-            checkpoint_callback.best_model_path # type: ignore
+            checkpoint_callback.best_model_path  # type: ignore
             if checkpoint_callback and hasattr(checkpoint_callback, "best_model_path")
             else None
         )
@@ -134,4 +147,6 @@ class XlaPjrtLauncher(_MultiProcessingLauncher):
         # add extra result data from trainer to send to main process
         extra = self.get_extra_results(trainer)
 
-        return _WorkerOutput(best_model_path, weights_path, trainer.state, results, extra)
+        return _WorkerOutput(
+            best_model_path, weights_path, trainer.state, results, extra
+        )

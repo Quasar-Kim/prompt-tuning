@@ -21,35 +21,36 @@ class DummyModule(BaseLightningModule):
     def _step_prediction(self, batch):
         pass
 
+
 class DummyTokenizer(Tokenizer):
     @property
     def bos_token(self):
-        return '[BOS]'
-    
+        return "[BOS]"
+
     @property
     def eos_token(self):
-        return '[EOS]'
+        return "[EOS]"
 
     @property
     def unk_token(self):
-        return '[UNK]'
-    
+        return "[UNK]"
+
     @property
     def pad_token(self):
-        return '[PAD]'
-    
+        return "[PAD]"
+
     @property
     def bos_token_id(self):
         return -1
-    
+
     @property
     def eos_token_id(self):
         return -2
-    
+
     @property
     def unk_token_id(self):
         return -3
-    
+
     @property
     def pad_token_id(self):
         return -4
@@ -66,20 +67,22 @@ class DummyTokenizer(Tokenizer):
     def decode_batch(self, *args, **kwargs):
         pass
 
+
 class DummyDataModule(T2tPipeDataModule):
     def __init__(self):
         pass
 
+
 dummy_task = Task(
-    name='dummy',
+    name="dummy",
     source={
-        'train': IterableDataSource([]),
+        "train": IterableDataSource([]),
     },
-    pipes=[]
+    pipes=[],
 )
 
 dummy_model = Model(
-    name='dummy',
+    name="dummy",
     feature_converter=NoopFeatureConverter(),
     module=DummyModule(),
     tokenizer=DummyTokenizer(),
@@ -90,8 +93,9 @@ dummy_env = Env(
     task=dummy_task,
     datamodule=DummyDataModule(),
     runtime_config={},
-    prediction=False
+    prediction=False,
 )
+
 
 def dataclass_equal(a, b):
     if type(a) != type(b):
@@ -105,11 +109,12 @@ def dataclass_equal(a, b):
             return False
         if isinstance(v_a, torch.Tensor):
             if not tensor_strict_equal(v_a, v_b):
-               return False
+                return False
         else:
             if v_a != v_b:
                 return False
     return True
+
 
 def tensor_strict_equal(a: torch.Tensor, b: torch.Tensor):
     if not torch.equal(a, b):

@@ -21,20 +21,24 @@ else:
     PostProcessor = None
     Metric = None
 
+
 @dataclass
 class EncodedSampleForPrediction:
     x: Tensor
+
 
 @dataclass
 class EncodedSampleForTrain:
     x: Tensor
     y: Tensor
 
+
 @dataclass
 class EncDecSampleForPrediction:
     enc_x: Tensor
     dec_x: Tensor
     enc_attention_mask: Optional[Tensor] = None
+
 
 @dataclass
 class EncDecSampleForTrain:
@@ -44,10 +48,12 @@ class EncDecSampleForTrain:
     enc_attention_mask: Optional[Tensor] = None
     dec_attention_mask: Optional[Tensor] = None
 
+
 @dataclass
 class ModelPredictionOutput:
     x: Tensor
     pred: Tensor
+
 
 @dataclass
 class ModelTrainOutput:
@@ -55,20 +61,24 @@ class ModelTrainOutput:
     y_pred: Tensor
     loss: Tensor
 
+
 @dataclass
 class BatchTextPrediction:
     x: List[str]
     pred: List[str]
+
 
 # @dataclass
 # class TextTrainOutput:
 #     y: List[str]
 #     y_pred: List[str]
 
+
 @dataclass
 class PostProcessedOutput:
     y: Tensor
     y_pred: Tensor
+
 
 @dataclass
 class Task:
@@ -79,6 +89,7 @@ class Task:
     postprocessor: Optional[PostProcessor] = None
     metrics: Optional[List[Metric]] = None
 
+
 @dataclass
 class Model:
     name: str
@@ -86,6 +97,7 @@ class Model:
     module: BaseLightningModule
     tokenizer: Tokenizer
     padder: Optional[TransformDataPipe] = None
+
 
 @dataclass
 class Env:
@@ -95,6 +107,7 @@ class Env:
     runtime_config: Dict[str, Any]
     prediction: bool
     pad_to: Optional[int] = None
+
 
 # @dataclass
 # class TokenizerEncoding:

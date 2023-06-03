@@ -46,9 +46,7 @@ class Tokenizer(ABC):
         return encoded
 
     @abstractmethod
-    def decode(
-        self, ids: List[int], remove_special_tokens: bool = False
-    ) -> str:
+    def decode(self, ids: List[int], remove_special_tokens: bool = False) -> str:
         pass
 
     def decode_batch(
@@ -58,4 +56,3 @@ class Tokenizer(ABC):
         for ids in batch_ids:
             decoded.append(self.decode(ids, remove_special_tokens))
         return decoded
-

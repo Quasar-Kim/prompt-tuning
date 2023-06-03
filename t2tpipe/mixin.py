@@ -1,6 +1,7 @@
 from typing import Protocol, TYPE_CHECKING
 from t2tpipe.dataclass import Env
 
+
 class SetupMixin:
     _env: Env
 

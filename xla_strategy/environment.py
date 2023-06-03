@@ -19,46 +19,50 @@ from xla_strategy.accelerator import XlaPjrtAccelerator
 
 log = logging.getLogger(__name__)
 
+
 class XlaPjrtEnvironment(ClusterEnvironment):
     def __init__(self, *args, **kwargs):
         if not XlaPjrtAccelerator.is_available():
-            raise MisconfigurationException('XLA accelerator not available')
+            raise MisconfigurationException("XLA accelerator not available")
         super().__init__(*args, **kwargs)
 
     @property
     def creates_processes_externally(self):
         return False
-    
+
     @staticmethod
     def detect() -> bool:
         return XlaPjrtAccelerator.is_available()
-    
+
     @property
     def main_address(self) -> str:
         raise NotImplementedError
-    
+
     @property
     def main_port(self) -> int:
         raise NotImplementedError
-    
+
     def world_size(self) -> int:
         from torch_xla.experimental import pjrt
+
         return pjrt.world_size()
-    
+
     def set_world_size(self, size: int) -> None:
-        log.debug('XLA environment does not allow setting world size, ignoring...')
+        log.debug("XLA environment does not allow setting world size, ignoring...")
 
     def global_rank(self) -> int:
         from torch_xla.experimental import pjrt
+
         return pjrt.global_ordinal()
 
     def set_global_rank(self, rank: int) -> None:
-        log.debug('XLA environment does not allow setting global rank, ignoring...')
+        log.debug("XLA environment does not allow setting global rank, ignoring...")
 
     def local_rank(self) -> int:
         from torch_xla.experimental import pjrt
+
         return pjrt.local_ordinal()
-    
+
     def node_rank(self):
         import torch_xla.core.xla_env_vars as xenv
         from torch_xla.utils.utils import getenv_as

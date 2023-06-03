@@ -39,10 +39,17 @@ from lightning.pytorch.strategies import DDPStrategy
 from lightning.pytorch.strategies import SingleDeviceStrategy
 from lightning.pytorch.strategies.strategy import TBroadcast
 from lightning.pytorch.trainer.states import TrainerFn
-from lightning.pytorch.utilities.parameter_tying import find_shared_parameters, set_shared_parameters
+from lightning.pytorch.utilities.parameter_tying import (
+    find_shared_parameters,
+    set_shared_parameters,
+)
 from lightning.pytorch.utilities.model_helpers import is_overridden
 from lightning.pytorch.utilities.types import STEP_OUTPUT
-from lightning_utilities.core.rank_zero import rank_zero_only, rank_zero_info, rank_zero_warn
+from lightning_utilities.core.rank_zero import (
+    rank_zero_only,
+    rank_zero_info,
+    rank_zero_warn,
+)
 
 from xla_strategy.accelerator import XlaPjrtAccelerator
 from xla_strategy.launcher import XlaPjrtLauncher
@@ -57,6 +64,7 @@ else:
 
 log = logging.getLogger(__name__)
 
+
 # BUG: 작동 안하고 hang 됨, 디버깅 필요
 class XlaPjrtStrategy(DDPStrategy):
     """Strategy for training multiple TPU devices using the :func:`torch_xla.distributed.xla_multiprocessing.spawn`
@@ -67,17 +75,19 @@ class XlaPjrtStrategy(DDPStrategy):
     def __init__(
         self,
         accelerator: "pl.accelerators.Accelerator" = None,
-        parallel_devices = None,
-        cluster_environment = None,
-        checkpoint_io = None,
+        parallel_devices=None,
+        cluster_environment=None,
+        checkpoint_io=None,
         precision_plugin: Optional[PrecisionPlugin] = None,
         debug: bool = False,
         sync_module_states: bool = True,
         **_: Any,
     ) -> None:
         if not XlaPjrtAccelerator.is_available():
-            raise MisconfigurationException('XLA accelerator not available. Try setting `PJRT_DEVICE`')
-        
+            raise MisconfigurationException(
+                "XLA accelerator not available. Try setting `PJRT_DEVICE`"
+            )
+
         if accelerator is None:
             accelerator = XlaPjrtAccelerator()
         if cluster_environment is None:
@@ -93,7 +103,7 @@ class XlaPjrtStrategy(DDPStrategy):
             parallel_devices=parallel_devices,
             cluster_environment=cluster_environment,
             checkpoint_io=checkpoint_io,
-            precision_plugin=precision_plugin
+            precision_plugin=precision_plugin,
         )
         self.debug = debug
         self._launched = False
@@ -110,7 +120,9 @@ class XlaPjrtStrategy(DDPStrategy):
     @property
     def root_device(self) -> torch.device:
         if not self._launched:
-            raise RuntimeError("Accessing the XLA device before processes have spawned is not allowed.")
+            raise RuntimeError(
+                "Accessing the XLA device before processes have spawned is not allowed."
+            )
         import torch_xla.core.xla_model as xm
 
         return xm.xla_device()
@@ -148,9 +160,12 @@ class XlaPjrtStrategy(DDPStrategy):
 
         if self.is_global_zero:
             from torch_xla.experimental import pjrt
+
             dev_type = pjrt.device_type()
             dev_num = pjrt.global_device_count()
-            log.info(f'Using XLA PJRT Runtime strategy - type: {dev_type}, count: {dev_num}')
+            log.info(
+                f"Using XLA PJRT Runtime strategy - type: {dev_type}, count: {dev_num}"
+            )
 
     def _setup_model(self, model: Module) -> Module:  # type: ignore
         return model
@@ -194,6 +209,7 @@ class XlaPjrtStrategy(DDPStrategy):
             return obj
 
         import torch_xla.core.xla_model as xm
+
         is_tensor = isinstance(obj, Tensor)
         if is_tensor:
             if obj.dim() == 0:
@@ -205,7 +221,9 @@ class XlaPjrtStrategy(DDPStrategy):
             buffer = io.BytesIO()
             torch.save(obj, buffer)
             obj = torch.tensor(  # type: ignore[assignment]
-                bytearray(buffer.getbuffer()), device=self.root_device, dtype=torch.float
+                bytearray(buffer.getbuffer()),
+                device=self.root_device,
+                dtype=torch.float,
             )
 
         obj = [obj]
@@ -219,13 +237,20 @@ class XlaPjrtStrategy(DDPStrategy):
         return obj
 
     def reduce(
-        self, output: Union[Tensor, Any], group: Optional[Any] = None, reduce_op: Optional[Union[ReduceOp, str]] = None
+        self,
+        output: Union[Tensor, Any],
+        group: Optional[Any] = None,
+        reduce_op: Optional[Union[ReduceOp, str]] = None,
     ) -> Tensor:
         if not isinstance(output, Tensor):
             output = torch.tensor(output, device=self.root_device)
 
-        invalid_reduce_op = isinstance(reduce_op, ReduceOp) and reduce_op != ReduceOp.SUM
-        invalid_reduce_op_str = isinstance(reduce_op, str) and reduce_op.lower() not in ("sum", "mean", "avg")
+        invalid_reduce_op = (
+            isinstance(reduce_op, ReduceOp) and reduce_op != ReduceOp.SUM
+        )
+        invalid_reduce_op_str = isinstance(
+            reduce_op, str
+        ) and reduce_op.lower() not in ("sum", "mean", "avg")
         if invalid_reduce_op or invalid_reduce_op_str:
             raise ValueError(
                 "Currently, the XLAStrategy only supports `sum`, `mean`, `avg` for the reduce operation, got:"
@@ -289,7 +314,9 @@ class XlaPjrtStrategy(DDPStrategy):
         if self.local_rank == 0:
             self.checkpoint_io.remove_checkpoint(filepath)
 
-    def all_gather(self, tensor: Tensor, group: Optional[Any] = None, sync_grads: bool = False) -> Tensor:
+    def all_gather(
+        self, tensor: Tensor, group: Optional[Any] = None, sync_grads: bool = False
+    ) -> Tensor:
         """Function to gather a tensor from several distributed processes.
 
         Args:
@@ -330,6 +357,7 @@ class XlaPjrtStrategy(DDPStrategy):
         if self.global_rank == 0 and getenv_as(xenv.TPUVM_MODE, int, 0) == 1:
             print()
 
+
 class XlaPjrtSingleDeviceStrategy(SingleDeviceStrategy):
     """Strategy for training on a single XLA device."""
 
@@ -342,7 +370,7 @@ class XlaPjrtSingleDeviceStrategy(SingleDeviceStrategy):
         debug: bool = False,
     ):
         if not XlaPjrtAccelerator.is_available():
-            raise MisconfigurationException('XLA device is not available')
+            raise MisconfigurationException("XLA device is not available")
         if isinstance(device, torch.device):
             # unwrap the `torch.device` in favor of `xla_device`
             device = device.index
@@ -377,7 +405,9 @@ class XlaPjrtSingleDeviceStrategy(SingleDeviceStrategy):
         self._checkpoint_io = io
 
     def setup(self, trainer: "pl.Trainer") -> None:
-        assert self.model, "self.model must be set before find_shared_parameters(self.model)"
+        assert (
+            self.model
+        ), "self.model must be set before find_shared_parameters(self.model)"
         shared_params = find_shared_parameters(self.model)
         self.model_to_device()
         set_shared_parameters(self.model, shared_params)
@@ -390,22 +420,30 @@ class XlaPjrtSingleDeviceStrategy(SingleDeviceStrategy):
         super().teardown()
         os.environ.pop("PT_XLA_DEBUG", None)
 
+
 class XlaPjrtFsdpStrategy(XlaPjrtStrategy):
     """
     XLA + PJRT + FSDP strategy
-    
+
     Note - Mixed precision:
     원래 하듯이 USE_BFLOAT16 환경 변수 사용시 nan 오류나는 것으로 보임.
     따라서 `compute_precision`을 `__init__`에 넘겨주면 됨.
     (기본값으로 `torch.bfloat16`이 설정되어 있음)
     """
 
-    def __init__(self, auto_wrap_policy = None, flatten_parameters: bool = True, compute_precision = torch.bfloat16, *args, **kwargs) -> None:
+    def __init__(
+        self,
+        auto_wrap_policy=None,
+        flatten_parameters: bool = True,
+        compute_precision=torch.bfloat16,
+        *args,
+        **kwargs,
+    ) -> None:
         self._auto_wrap_policy = auto_wrap_policy
         self._flatten_parameters = flatten_parameters
         self._compute_precision = compute_precision
         super().__init__(*args, **kwargs)
-    
+
     def setup(self, trainer: pl.Trainer) -> None:
         # almost same with FSDP strategy
         assert self.accelerator is not None
@@ -433,21 +471,22 @@ class XlaPjrtFsdpStrategy(XlaPjrtStrategy):
 
     def _setup_model(self, model: Module) -> Module:
         from torch_xla.distributed.fsdp import XlaFullyShardedDataParallel as FSDP
+
         # TODO: activation checkpointing?
         if self._auto_wrap_policy is not None:
-            auto_wrap_policy = self._auto_wrap_policy   
-            log.debug('using auto wrap policy from __init__')
-        elif hasattr(self.lightning_module, 'xla_fsdp_auto_wrap_policy'):
+            auto_wrap_policy = self._auto_wrap_policy
+            log.debug("using auto wrap policy from __init__")
+        elif hasattr(self.lightning_module, "xla_fsdp_auto_wrap_policy"):
             auto_wrap_policy = self.lightning_module.xla_fsdp_auto_wrap_policy
-            log.debug('using auto wrap policy specified in model')
+            log.debug("using auto wrap policy specified in model")
         else:
-            raise ValueError('auto wrap policy is not specified')
+            raise ValueError("auto wrap policy is not specified")
         wrapped_module = FSDP(
             module=model,
             flatten_parameters=self._flatten_parameters,
             mark_step_on_finalization=True,
             auto_wrap_policy=auto_wrap_policy,
-            compute_dtype=self._compute_precision
+            compute_dtype=self._compute_precision,
         )
         if self.is_global_zero:
             log.debug(repr(wrapped_module))
@@ -455,40 +494,44 @@ class XlaPjrtFsdpStrategy(XlaPjrtStrategy):
 
     def model_to_device(self) -> None:
         pass
-    
-    def save_checkpoint(self, checkpoint: Dict[str, Any], filepath: _PATH, storage_options: Any = None) -> None:
+
+    def save_checkpoint(
+        self, checkpoint: Dict[str, Any], filepath: _PATH, storage_options: Any = None
+    ) -> None:
         # TODO: 왜 여기서 barrier 안하면 오류가 발생하는지 알아보기
         self.barrier()
         filepath = Path(filepath)
         assert len(filepath.suffix) > 0
 
         from torch_xla.distributed.fsdp import XlaFullyShardedDataParallel as FSDP
+
         assert isinstance(self.model, FSDP)
         sharded_state_dict = {
             # NOTE: checkpoint['model']은 FSDP wrapper을 제외한 lightning module의 state dict임
             # 따라서 consolidation을 시도하면 오류 발생
-            'model': self.model.state_dict(),
-            'shard_metadata': self.model.get_shard_metadata()
+            "model": self.model.state_dict(),
+            "shard_metadata": self.model.get_shard_metadata(),
         }
         self.checkpoint_io.save_checkpoint(
             sharded_state_dict,
-            path=filepath.with_name(f'sharded-state-dict-{self.global_rank}.tmp')
+            path=filepath.with_name(f"sharded-state-dict-{self.global_rank}.tmp"),
         )
 
         self.barrier()
 
         if self.is_global_zero:
             from torch_xla.distributed.fsdp import consolidate_sharded_model_checkpoints
+
             with suppress_stdout():
                 # print()가 내부에 있는데 무시하기 위해 suppress_stdout 사용
                 wrapped_state_dict, _ = consolidate_sharded_model_checkpoints(
-                    ckpt_prefix=str(filepath.parent) + '/',
-                    ckpt_suffix='sharded-state-dict-*.tmp',
-                    save_model=False
+                    ckpt_prefix=str(filepath.parent) + "/",
+                    ckpt_suffix="sharded-state-dict-*.tmp",
+                    save_model=False,
                 )
-            log.debug('checkpoint consolidated')
+            log.debug("checkpoint consolidated")
             # 임시 파일 제거
-            for p in filepath.parent.glob('sharded-state-dict-*.tmp'):
+            for p in filepath.parent.glob("sharded-state-dict-*.tmp"):
                 p.unlink()
             # wrapped_state_dict는 _LightningModuleWrapperBase로 래핑된 LightningModule의 state_dict
             # _LightningModuleWrapperBase는 _forward_module에 LightningModule을 저장함
@@ -496,18 +539,16 @@ class XlaPjrtFsdpStrategy(XlaPjrtStrategy):
             # 따라서 _forward_module. prefix 제거
             state_dict = OrderedDict()
             for k, v in wrapped_state_dict.items():
-                if k.startswith('_forward_module.'):
-                    new_k = k[len('_forward_module.'):]
+                if k.startswith("_forward_module."):
+                    new_k = k[len("_forward_module.") :]
                 else:
-                    new_k = k   
+                    new_k = k
                 state_dict[new_k] = v
-            checkpoint['state_dict'] = state_dict
+            checkpoint["state_dict"] = state_dict
             self.checkpoint_io.save_checkpoint(
-                checkpoint,
-                path=filepath,
-                storage_options=storage_options
+                checkpoint, path=filepath, storage_options=storage_options
             )
-            log.debug('saved checkpoint')
+            log.debug("saved checkpoint")
         self.barrier()
 
     @contextlib.contextmanager

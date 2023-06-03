@@ -33,6 +33,13 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}:${PYTHONPATH}"
             }
+        },
+        {
+            "name": "Pytest",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "console": "integratedTerminal"
         }
     ]
 }

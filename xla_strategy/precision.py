@@ -30,7 +30,7 @@ class XlaPrecision(Precision):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         if not XlaPjrtAccelerator.is_available():
-            raise MisconfigurationException('XLA accelerator not available')
+            raise MisconfigurationException("XLA accelerator not available")
         super().__init__(*args, **kwargs)
 
     def optimizer_step(
@@ -40,11 +40,13 @@ class XlaPrecision(Precision):
         **kwargs: Any,
     ) -> Any:
         import torch_xla.core.xla_model as xm
+
         if use_xm:
             return xm.optimizer_step(optimizer, optimizer_args=kwargs)
         else:
             return optimizer.step(**kwargs)
-    
+
+
 class XlaBf16Precision(XlaPrecision):
     """Plugin that enables mixed bf16 with XLA."""
 
@@ -55,10 +57,17 @@ class XlaBf16Precision(XlaPrecision):
         os.environ["XLA_USE_BF16"] = "1"
 
     def convert_input(self, data: Any) -> Any:
-        return apply_to_collection(data, function=_convert_fp_tensor, dtype=Tensor, dst_type=torch.bfloat16)
+        return apply_to_collection(
+            data, function=_convert_fp_tensor, dtype=Tensor, dst_type=torch.bfloat16
+        )
 
     def convert_output(self, data: Any) -> Any:
-        return apply_to_collection(data, function=_convert_fp_tensor, dtype=Tensor, dst_type=torch.get_default_dtype())
-    
+        return apply_to_collection(
+            data,
+            function=_convert_fp_tensor,
+            dtype=Tensor,
+            dst_type=torch.get_default_dtype(),
+        )
+
     def teardown(self) -> None:
         os.environ.pop("XLA_USE_BF16", None)
