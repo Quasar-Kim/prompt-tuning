@@ -1,3 +1,9 @@
+import dataclasses
+from typing import TypeVar, Protocol, List, Dict
+
+import torch
+from torch.utils.data import default_collate
+
 from time import perf_counter
 from lightning.pytorch import LightningDataModule
 from rich.console import Console
@@ -33,3 +39,52 @@ def benchmark_datamodule(datamodule: LightningDataModule):
 
     console = Console()
     console.print(table)
+
+
+class DataClassLike(Protocol):
+    __dict__: dict
+
+
+_DATACLASS = TypeVar("_DATACLASS", bound=DataClassLike)
+
+
+class TensorDataClassLike(Protocol):
+    __dict__: Dict[str, torch.Tensor]
+
+
+_TENSOR_DATACLASS = TypeVar("_TENSOR_DATACLASS", bound=TensorDataClassLike)
+
+
+def collate_dataclass(samples: List[_DATACLASS]) -> _DATACLASS:
+    assert dataclasses.is_dataclass(samples[0])
+    dict_samples = [s.__dict__ for s in samples]
+    collated = default_collate(dict_samples)
+    return dataclasses.replace(samples[0], **collated)
+
+
+def join_tensor_dataclass(samples: List[_TENSOR_DATACLASS]) -> _TENSOR_DATACLASS:
+    assert dataclasses.is_dataclass(samples[0])
+    dict_samples = [s.__dict__ for s in samples]
+    concatenated = {}
+    for k in dict_samples[0].keys():
+        values = []
+        for s in dict_samples:
+            values.append(s[k])
+        concatenated[k] = join_tensors(values)
+    return dataclasses.replace(samples[0], **concatenated)
+
+
+def dataclass_to_cpu(dataclass: _DATACLASS) -> _DATACLASS:
+    assert dataclasses.is_dataclass(dataclass)
+    entries = {}
+    for k, v in dataclass.__dict__.items():
+        assert isinstance(v, torch.Tensor)
+        entries[k] = v.cpu()
+    return dataclasses.replace(dataclass, **entries)
+
+
+def join_tensors(tensors: List[torch.Tensor], dim: int = 0) -> torch.Tensor:
+    assert isinstance(tensors[0], torch.Tensor)
+    if tensors[0].ndim > 0:
+        return torch.cat(tensors, dim=dim)
+    return torch.stack(tensors, dim=dim)

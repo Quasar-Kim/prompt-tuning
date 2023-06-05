@@ -8,8 +8,8 @@ from t2tpipe.tokenizer import Tokenizer
 class HfTokenizer(Tokenizer):
     _tokenizer: PreTrainedTokenizerBase
 
-    def __init__(self, model_name: str):
-        self._tokenizer = AutoTokenizer.from_pretrained(model_name)
+    def __init__(self, model_name: str, *args, **kwargs):
+        self._tokenizer = AutoTokenizer.from_pretrained(model_name, *args, **kwargs)
 
     @property
     def pad_token_id(self):
@@ -71,3 +71,14 @@ class KeT5Tokenizer(HfTokenizer):
     def bos_token(self):
         # implementation detail
         return self.pad_token
+
+
+class KoGpt2Tokenizer(HfTokenizer):
+    def __init__(self):
+        super().__init__(
+            "skt/kogpt2-base-v2",
+            bos_token="<s>",
+            eos_token="</s>",
+            unk_token="<unk>",
+            pad_token="<pad>",
+        )

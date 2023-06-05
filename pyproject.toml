@@ -40,6 +40,7 @@ tensorflow = "^2.12.0"
 tensorboard = "2.12"
 rich = "^13.3.5"
 black = "^23.3.0"
+pyright = "^1.1.311"
 
 [tool.poetry.group.xla]
 optional = true

@@ -43,7 +43,7 @@ class XlaPjrtEnvironment(ClusterEnvironment):
         raise NotImplementedError
 
     def world_size(self) -> int:
-        from torch_xla.experimental import pjrt
+        from torch_xla.experimental import pjrt  # type: ignore
 
         return pjrt.world_size()
 
@@ -51,7 +51,7 @@ class XlaPjrtEnvironment(ClusterEnvironment):
         log.debug("XLA environment does not allow setting world size, ignoring...")
 
     def global_rank(self) -> int:
-        from torch_xla.experimental import pjrt
+        from torch_xla.experimental import pjrt  # type: ignore
 
         return pjrt.global_ordinal()
 
@@ -59,12 +59,12 @@ class XlaPjrtEnvironment(ClusterEnvironment):
         log.debug("XLA environment does not allow setting global rank, ignoring...")
 
     def local_rank(self) -> int:
-        from torch_xla.experimental import pjrt
+        from torch_xla.experimental import pjrt  # type: ignore
 
         return pjrt.local_ordinal()
 
     def node_rank(self):
-        import torch_xla.core.xla_env_vars as xenv
-        from torch_xla.utils.utils import getenv_as
+        import torch_xla.core.xla_env_vars as xenv  # type: ignore
+        from torch_xla.utils.utils import getenv_as  # type: ignore
 
         return getenv_as(xenv.HOST_ORDINAL, int, 0)

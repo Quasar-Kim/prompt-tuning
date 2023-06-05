@@ -1,7 +1,7 @@
 from __future__ import annotations
 import functools
 from itertools import islice
-from typing import Tuple, Dict, Any, Type, Union
+from typing import Tuple, Dict, Any, Type, Union, cast
 from abc import ABC, abstractmethod
 
 import torch
@@ -16,9 +16,11 @@ from torch.utils.data.datapipes.iter.sharding import SHARDING_PRIORITIES
 from t2tpipe.mixin import SetupMixin
 from t2tpipe.dataclass import (
     EncodedSampleForTrain,
-    EncDecSampleForTrain,
     EncodedSampleForPrediction,
+    EncDecSampleForTrain,
     EncDecSampleForPrediction,
+    DecSampleForTrain,
+    DecSampleForPrediction,
 )
 from t2tpipe.type import TextSampleForTrain, TextSampleForPrediction
 
@@ -223,7 +225,9 @@ class FeatureTokenizer(Mapper):
 
     def _tokenize(self, sample: Union[TextSampleForTrain, TextSampleForPrediction]):
         if self._env.prediction:
+            sample = cast(TextSampleForPrediction, sample)
             return self._tokenize_prediction_sample(sample)
+        sample = cast(TextSampleForTrain, sample)
         return self._tokenize_train_sample(sample)
 
     def _tokenize_train_sample(self, sample: TextSampleForTrain):
@@ -233,7 +237,7 @@ class FeatureTokenizer(Mapper):
             y=torch.tensor(tokenizer.encode(sample["y"])),
         )
 
-    def _tokenize_prediction_sample(self, sample: EncodedSampleForPrediction):
+    def _tokenize_prediction_sample(self, sample: TextSampleForPrediction):
         tokenizer = self._env.model.tokenizer
         return EncodedSampleForPrediction(x=torch.tensor(tokenizer.encode(sample["x"])))
 
@@ -251,7 +255,9 @@ class Padder(Mapper):
         self, sample: Union[EncodedSampleForTrain, EncodedSampleForPrediction]
     ):
         if self._env.prediction:
+            sample = cast(EncodedSampleForPrediction, sample)
             return self._pad_prediction_sample(sample)
+        sample = cast(EncodedSampleForTrain, sample)
         return self._pad_train_sample(sample)
 
     def _pad_train_sample(self, sample: EncodedSampleForTrain):
@@ -276,17 +282,46 @@ class Padder(Mapper):
         return self._env.model.tokenizer.pad_token_id
 
 
-class PadderForEncDecModel(Mapper):
+class BasePadder(Mapper):
     def __init__(self):
         super().__init__(fn=self._pad_sample)
 
-    def _pad_sample(
-        self, sample: Union[EncDecSampleForTrain, EncDecSampleForPrediction]
-    ):
+    def _pad_sample(self, sample):
         if self._env.prediction:
             return self._pad_prediction_sample(sample)
         return self._pad_train_sample(sample)
 
+    def _pad_tensor(self, t: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        assert (
+            self.pad_value is not None
+        ), "Tokenizer should have pad_token_id but it does not"
+        assert self._env.pad_to is not None, "Env should have pad_to but it does not"
+        pad_to = self._env.pad_to
+        pad_len = pad_to - t.shape[-1]
+        if pad_len < 0:
+            raise ValueError(
+                f"Cannot pad tensor longer than pad_to: {t.shape[-1]} > {pad_to}"
+            )
+        padded = torch.nn.functional.pad(t, (0, pad_len), value=self.pad_value)
+        mask = torch.cat(
+            [torch.tensor(1).expand(t.shape[-1]), torch.tensor(0).expand(pad_len)]
+        )
+        return padded, mask
+
+    @property
+    def pad_value(self):
+        return self._env.model.tokenizer.pad_token_id
+
+    @abstractmethod
+    def _pad_train_sample(self, sample):
+        pass
+
+    @abstractmethod
+    def _pad_prediction_sample(self, sample):
+        pass
+
+
+class PadderForEncDecModel(BasePadder):
     def _pad_train_sample(self, sample: EncDecSampleForTrain) -> EncDecSampleForTrain:
         padded_enc_x, enc_attention_mask = self._pad_tensor(sample.enc_x)
         padded_dec_x, dec_attention_mask = self._pad_tensor(sample.dec_x)
@@ -309,26 +344,18 @@ class PadderForEncDecModel(Mapper):
             enc_attention_mask=enc_attention_mask,
         )
 
-    def _pad_tensor(self, t: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        assert (
-            self.pad_value is not None
-        ), "Tokenizer should have pad_token_id but it does not"
-        assert self._env.pad_to is not None, "Env should have pad_to but it does not"
-        pad_to = self._env.pad_to
-        pad_len = pad_to - t.shape[-1]
-        if pad_len < 0:
-            raise ValueError(
-                f"Cannot pad tensor longer than pad_to: {t.shape[-1]} > {pad_to}"
-            )
-        padded = torch.nn.functional.pad(t, (0, pad_len), value=self.pad_value)
-        mask = torch.cat(
-            [torch.tensor(1).expand(t.shape[-1]), torch.tensor(0).expand(pad_len)]
-        )
-        return padded, mask
 
-    @property
-    def pad_value(self):
-        return self._env.model.tokenizer.pad_token_id
+class PadderForDecModel(BasePadder):
+    def _pad_train_sample(self, sample: DecSampleForTrain) -> DecSampleForTrain:
+        padded_x, attention_mask = self._pad_tensor(sample.x)
+        padded_y, _ = self._pad_tensor(sample.y)
+        return DecSampleForTrain(x=padded_x, y=padded_y, attention_mask=attention_mask)
+
+    def _pad_prediction_sample(
+        self, sample: DecSampleForPrediction
+    ) -> DecSampleForPrediction:
+        padded_x, attention_mask = self._pad_tensor(sample.x)
+        return DecSampleForPrediction(x=padded_x, attention_mask=attention_mask)
 
 
 class NoopDataPipe(TransformDataPipe):

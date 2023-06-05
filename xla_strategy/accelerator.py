@@ -30,7 +30,7 @@ class XlaPjrtAccelerator(Accelerator):
 
     def get_device_stats(self, device: torch.device) -> Dict[str, Any]:
         try:
-            import torch_xla.core.xla_model as xm
+            import torch_xla.core.xla_model as xm  # type: ignore
 
             memory_info = xm.get_memory_info(device)
             free_memory = memory_info["kb_free"]
@@ -48,7 +48,7 @@ class XlaPjrtAccelerator(Accelerator):
 
     @staticmethod
     def is_available():
-        import torch_xla.core.xla_env_vars as xenv
+        import torch_xla.core.xla_env_vars as xenv  # type: ignore
 
         if xenv.PJRT_DEVICE not in os.environ:
             return False
@@ -57,7 +57,7 @@ class XlaPjrtAccelerator(Accelerator):
     @staticmethod
     def auto_device_count() -> int:
         try:
-            import torch_xla.core.xla_env_vars as xenv
+            import torch_xla.core.xla_env_vars as xenv  # type: ignore
 
             dev_type = os.environ[xenv.PJRT_DEVICE]
             if dev_type == "CPU":

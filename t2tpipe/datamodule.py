@@ -8,7 +8,7 @@ from torch.utils.data import IterDataPipe as TorchIterDataPipe
 from lightning.pytorch import LightningDataModule
 
 from t2tpipe.dataclass import Env
-from t2tpipe.dataclass import EncDecSampleForTrain
+from t2tpipe.util import collate_dataclass
 
 log = Logger(__name__)
 
@@ -118,15 +118,6 @@ class T2tPipeDataModule(LightningDataModule):
             num_workers=self.env.runtime_config["num_workers"],
             batch_size=self.env.runtime_config["batch_size"],
             pin_memory=self.env.runtime_config["is_gpu"],
-            collate_fn=_collate_dataclass,
+            collate_fn=collate_dataclass,
             **kwargs,
         )
-
-
-# TODO: typing dataclass?
-def _collate_dataclass(samples: List):
-    assert dataclasses.is_dataclass(samples[0])
-    dataclass_cls = type(samples[0])
-    dict_samples = [dataclasses.asdict(s) for s in samples]
-    collated = default_collate(dict_samples)
-    return dataclass_cls(**collated)

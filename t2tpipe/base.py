@@ -1,25 +1,26 @@
 from abc import ABC, abstractmethod
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Union, overload, TypeVar, cast, Dict, Optional
+import dataclasses
 
 import torch
 from torch import Tensor
 from lightning.pytorch import LightningModule
 
-from t2tpipe.dataclass import (
-    ModelTrainOutput,
-    ModelPredictionOutput,
-    Env,
-    BatchTextPrediction,
-)
+from t2tpipe.dataclass import ModelTrainOutput, ModelPredictionOutput, Env
+from t2tpipe.postprocessor import PostProcessor
+from t2tpipe.util import join_tensor_dataclass, dataclass_to_cpu
+
+_MODEL_OUTPUT_T = TypeVar("_MODEL_OUTPUT_T", ModelTrainOutput, ModelPredictionOutput)
 
 
-# TODO: support inference mode
 class BaseLightningModule(LightningModule, ABC):
     _env: Env
     _configured: bool = False
     _train_losses: List[Tensor] = []
     _validation_outputs: List[ModelTrainOutput] = []
     _test_outputs: List[ModelTrainOutput] = []
+    _prediction_outputs: List[ModelPredictionOutput] = []
+    predictions: Any = None
 
     def configure(self, env: Env):
         self._env = env
@@ -40,14 +41,9 @@ class BaseLightningModule(LightningModule, ABC):
 
     def predict_step(
         self, batch: Any, batch_idx: int, dataloader_idx: int = 0
-    ) -> BatchTextPrediction:
+    ) -> ModelPredictionOutput:
         outputs = self._step_prediction(batch)
-        cpu_outputs = _model_prediction_output_to_cpu(outputs)
-        prediction = BatchTextPrediction(
-            x=self._decode_batch(cpu_outputs.x),
-            pred=self._decode_batch(cpu_outputs.pred),
-        )
-        return prediction
+        return outputs
 
     @abstractmethod
     def _step_train(self, batch) -> ModelTrainOutput:
@@ -75,74 +71,62 @@ class BaseLightningModule(LightningModule, ABC):
         self._test_outputs.append(outputs)
 
     def on_validation_epoch_end(self):
-        self._log_metrics(self._validation_outputs, stage="validation")
+        outputs = self._postprocess_outputs(self._validation_outputs)
+        self._validation_outputs.clear()
+        outputs = self._preprocess_outputs_for_metric(outputs)
+        self._log_loss(outputs.loss, stage="validation")
+        self._compute_and_log_metrics(
+            ys=outputs.y, y_preds=outputs.y_pred, stage="validation"
+        )
 
     def on_test_epoch_end(self):
-        self._log_metrics(self._test_outputs, stage="test")
-
-    def _log_metrics(self, outputs: List[ModelTrainOutput], stage: str):
-        collated_outputs = self._collate_train_outputs(outputs)
-        cpu_outputs = _model_train_output_to_cpu(collated_outputs)
-        ys, y_preds = self._postprocess_model_train_output(cpu_outputs)
-        outputs.clear()
-        self._log_loss(cpu_outputs.loss, stage=stage)
-        self._compute_and_log_metrics(ys, y_preds, stage=stage)
-
-    def _collate_prediction_outputs(
-        self, outputs: List[ModelPredictionOutput]
-    ) -> ModelPredictionOutput:
-        ys = []  # list of (B, N)
-        y_preds = []  # list of (B, N)
-        for out in outputs:
-            ys.append(out.x)
-            y_preds.append(out.pred)
-        collated_outputs = ModelPredictionOutput(
-            x=torch.cat(ys),  # (number of samples, N)
-            pred=torch.cat(y_preds),  # (number of samples, N)
+        outputs = self._postprocess_outputs(self._test_outputs)
+        self._test_outputs.clear()
+        outputs = self._preprocess_outputs_for_metric(outputs)
+        self._log_loss(outputs.loss, stage="test")
+        self._compute_and_log_metrics(
+            ys=outputs.y, y_preds=outputs.y_pred, stage="test"
         )
-        return collated_outputs
 
-    def _collate_train_outputs(
-        self, outputs: List[ModelTrainOutput]
-    ) -> ModelTrainOutput:
-        ys = []  # list of (B, N)
-        y_preds = []  # list of (B, N)
-        losses = []  # list of (B,)
-        for out in outputs:
-            ys.append(out.y)
-            y_preds.append(out.y_pred)
-            losses.append(out.loss)
-        collated_outputs = ModelTrainOutput(
-            y=torch.cat(ys),  # (number of samples, N)
-            y_pred=torch.cat(y_preds),  # (number of samples, N)
-            loss=torch.stack(losses),  # (number of samples,)
+    def on_predict_batch_end(self, outputs: ModelPredictionOutput, batch, batch_idx):
+        self._prediction_outputs.append(outputs)
+
+    def on_predict_epoch_end(self):
+        self.predictions = self._postprocess_outputs(self._prediction_outputs)
+        self._prediction_outputs.clear()
+
+    def _postprocess_outputs(self, outputs: List[_MODEL_OUTPUT_T]) -> _MODEL_OUTPUT_T:
+        concatenated_otputs = join_tensor_dataclass(outputs)  # (S, N)
+        cpu_outputs = dataclass_to_cpu(concatenated_otputs)
+        if self._env.task.postprocessors is None:
+            return cpu_outputs
+        postprocessed_outputs = self._apply_processors_to_outputs(
+            cpu_outputs,
+            processors=cast(List[PostProcessor], self._env.task.postprocessors),
         )
-        return collated_outputs
+        return postprocessed_outputs
 
-    def _log_loss(self, losses: torch.Tensor, stage):
+    def _preprocess_outputs_for_metric(
+        self, outputs: _MODEL_OUTPUT_T
+    ) -> _MODEL_OUTPUT_T:
+        processors = self._env.task.metric_preprocessors
+        assert processors is not None
+        processed = self._apply_processors_to_outputs(
+            outputs, processors=cast(List[PostProcessor], processors)
+        )
+        return processed
+
+    def _apply_processors_to_outputs(
+        self, outputs: _MODEL_OUTPUT_T, processors: List[PostProcessor]
+    ) -> _MODEL_OUTPUT_T:
+        value = outputs
+        for processor in processors:
+            value = processor(value)
+        return value
+
+    def _log_loss(self, losses: torch.Tensor, stage: str):
         loss = losses.mean()
         self.log(f"{stage}/loss", loss, sync_dist=True, prog_bar=True)
-
-    def _postprocess_model_train_output(
-        self, outputs: ModelTrainOutput
-    ) -> Tuple[Tensor, Tensor]:
-        ys = self._postprocess(outputs.y)
-        y_preds = self._postprocess(outputs.y_pred)
-        return ys, y_preds
-
-    def _postprocess(self, inputs: Tensor) -> Tensor:
-        decoded = self._decode_batch(inputs)
-        postprocessor = self._env.task.postprocessor
-        assert postprocessor is not None
-        postprocessed = [postprocessor(sample) for sample in decoded]
-        out = torch.tensor(postprocessed)
-        return out
-
-    def _decode_batch(self, inputs: Tensor) -> List[str]:
-        decoded = self._env.model.tokenizer.decode_batch(
-            inputs.tolist(), remove_special_tokens=True
-        )
-        return decoded
 
     def _compute_and_log_metrics(self, ys: Tensor, y_preds: Tensor, stage: str):
         metrics = self._env.task.metrics
@@ -155,18 +139,3 @@ class BaseLightningModule(LightningModule, ABC):
                 sync_dist=True,
                 reduce_fx=metric.reduce_fx,
             )
-
-
-def _model_train_output_to_cpu(outputs: ModelTrainOutput) -> ModelTrainOutput:
-    return ModelTrainOutput(
-        y=outputs.y.cpu(), y_pred=outputs.y_pred.cpu(), loss=outputs.loss.cpu()
-    )
-
-
-def _model_prediction_output_to_cpu(
-    outputs: ModelPredictionOutput,
-) -> ModelPredictionOutput:
-    return ModelPredictionOutput(
-        x=outputs.x.cpu(),
-        pred=outputs.pred.cpu(),
-    )

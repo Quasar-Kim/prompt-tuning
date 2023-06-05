@@ -1,20 +1,22 @@
 from functools import partial
 
-from transformers import T5ForConditionalGeneration
+from transformers import T5ForConditionalGeneration, GPT2LMHeadModel
 import torch
 from torch import optim
 from torch.optim.lr_scheduler import LambdaLR
 from peft import get_peft_model, LoraConfig, TaskType
 
-from t2tpipe import feature_converter, Model
+from t2tpipe import feature_converter, postprocessor, Model
 from t2tpipe.base import BaseLightningModule
 from t2tpipe.dataclass import (
     EncDecSampleForTrain,
     EncDecSampleForPrediction,
+    DecSampleForTrain,
+    DecSampleForPrediction,
     ModelPredictionOutput,
     ModelTrainOutput,
 )
-from tokenizer import KeT5Tokenizer
+import tokenizer
 
 
 class InvSqrtScheduler(LambdaLR):
@@ -45,7 +47,9 @@ class KeT5Module(BaseLightningModule):
     def _step_train(self, batch: EncDecSampleForTrain) -> ModelTrainOutput:
         output = self(batch)
         y_pred = torch.argmax(output.logits, dim=-1)
-        return ModelTrainOutput(y=batch.y, y_pred=y_pred, loss=output.loss)
+        return ModelTrainOutput(
+            x=batch.enc_x, y=batch.y, y_pred=y_pred, loss=output.loss
+        )
 
     def _step_prediction(
         self, batch: EncDecSampleForPrediction
@@ -102,33 +106,75 @@ ket5_small = Model(
     name="ket5_small",
     feature_converter=feature_converter.EncDecFeatureConverter(),
     module=KeT5SmallModule(),
-    tokenizer=KeT5Tokenizer(),
+    tokenizer=tokenizer.KeT5Tokenizer(),
 )
 
 ket5_base = Model(
     name="ket5_base",
     feature_converter=feature_converter.EncDecFeatureConverter(),
     module=KeT5BaseModule(),
-    tokenizer=KeT5Tokenizer(),
+    tokenizer=tokenizer.KeT5Tokenizer(),
 )
 
 ket5_base_lora = Model(
     name="ket5_base_lora",
     feature_converter=feature_converter.EncDecFeatureConverter(),
     module=apply_lora(KeT5BaseModule()),
-    tokenizer=KeT5Tokenizer(),
+    tokenizer=tokenizer.KeT5Tokenizer(),
 )
 
 ket5_large = Model(
     name="ket5_large",
     feature_converter=feature_converter.EncDecFeatureConverter(),
     module=KeT5SmallModule(),
-    tokenizer=KeT5Tokenizer(),
+    tokenizer=tokenizer.KeT5Tokenizer(),
 )
 
 ket5_large_lora = Model(
     name="ket5_large_lora",
     feature_converter=feature_converter.EncDecFeatureConverter(),
     module=apply_lora(KeT5SmallModule()),
-    tokenizer=KeT5Tokenizer(),
+    tokenizer=tokenizer.KeT5Tokenizer(),
+)
+
+
+class KoGpt2Module(BaseLightningModule):
+    def __init__(self):
+        self.module = GPT2LMHeadModel.from_pretrained("skt/kogpt2-base-v2")
+
+    def forward(self, batch: DecSampleForTrain):
+        # TODO: batch.y가 그대로 사용되는지, 아니면 shift되는지 확인해보기
+        return self.module(
+            input_ids=batch.x,
+            attention_mask=batch.attention_mask,
+            labels=batch.y,
+        )  # type: ignore
+
+    def _step_train(self, batch: DecSampleForTrain) -> ModelTrainOutput:
+        output = self(batch)
+        y_pred = torch.argmax(output.logits, dim=-1)
+        return ModelTrainOutput(x=batch.x, y=batch.y, y_pred=y_pred, loss=output.loss)
+
+    def _step_prediction(self, batch: DecSampleForPrediction) -> ModelPredictionOutput:
+        raise NotImplementedError()
+
+    def configure_optimizers(self):
+        cfg = self._env.runtime_config
+        assert "lr" in cfg
+        assert "num_warmup_epochs" in cfg
+        optimizer = optim.Adam(self.parameters(), lr=cfg["lr"])
+        lr_scheduler = InvSqrtScheduler(
+            optimizer, warmup_epochs=cfg["num_warmup_epochs"]
+        )
+        return {"optimizer": optimizer, "lr_scheduler": lr_scheduler}
+
+
+kogpt2 = Model(
+    name="kogpt2",
+    feature_converter=feature_converter.DecFeatureConverter(),
+    module=KoGpt2Module(),
+    tokenizer=tokenizer.KoGpt2Tokenizer(),
+    postprocessors={
+        "before_decoder": postprocessor.LMOutputSlicer(),
+    },
 )

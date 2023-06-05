@@ -8,13 +8,13 @@ class HasName(Protocol):
 
 
 class Registry:
-    _data: Dict[str, Task] = {}
+    _data: Dict[str, HasName] = {}
 
     def register(self, entry: HasName):
-        _data[entry.name] = entry
+        self._data[entry.name] = entry
 
     def unregister(self, entry: HasName):
-        _data.pop(entry.name)
+        self._data.pop(entry.name)
 
     def has(self, name: str):
         return name in self._data

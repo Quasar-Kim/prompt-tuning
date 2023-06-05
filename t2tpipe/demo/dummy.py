@@ -1,4 +1,5 @@
-from typing import Any, List
+from typing import Any, List, Union, TypeVar
+import dataclasses
 
 import torch
 from torch import nn, optim
@@ -21,6 +22,9 @@ from t2tpipe.dataclass import (
     ModelTrainOutput,
 )
 from t2tpipe.type import TextSampleForTrain
+from t2tpipe.util import join_tensors
+
+_MODEL_OUTPUT_T = TypeVar("_MODEL_OUTPUT_T", ModelTrainOutput, ModelPredictionOutput)
 
 
 class DummyTokenizer(Tokenizer):
@@ -75,26 +79,59 @@ class DummyModule(BaseLightningModule):
         return y, y.mean()
 
     def _step_train(self, batch: EncDecSampleForTrain) -> ModelTrainOutput:
-        logits, loss = self(batch)
-        y_pred = torch.argmax(logits, dim=-1)
-        return ModelTrainOutput(y=batch.y, y_pred=y_pred, loss=loss)
+        _, loss = self(batch)
+        return ModelTrainOutput(x=batch.enc_x, y=batch.y, y_pred=batch.y, loss=loss)
 
     def _step_prediction(
         self, batch: EncDecSampleForPrediction
     ) -> ModelPredictionOutput:
-        return ModelPredictionOutput(x=batch.enc_x, pred=batch.enc_x)
+        return ModelPredictionOutput(x=batch.enc_x, y_pred=batch.enc_x)
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
 
 
-class DummyPostProcessor(postprocessor.PostProcessor):
-    def __init__(self):
-        self._tokenizer = DummyTokenizer()
+class MultiplyPostProcessor(postprocessor.PostProcessor):
+    def __call__(self, outputs: _MODEL_OUTPUT_T) -> _MODEL_OUTPUT_T:
+        if self._env.prediction:
+            assert isinstance(outputs, ModelPredictionOutput)
+            return self._process_prediction_output(outputs)
+        assert isinstance(outputs, ModelTrainOutput)
+        return self._process_train_output(outputs)
 
-    def __call__(self, y_or_y_pred: str) -> Any:
-        return self._tokenizer.encode(y_or_y_pred)[:1]
+    def _process_train_output(self, outputs: ModelTrainOutput) -> ModelTrainOutput:
+        return dataclasses.replace(
+            outputs,
+            y=self._postprocess(outputs.y),
+            y_pred=self._postprocess(outputs.y_pred),
+        )
+
+    def _process_prediction_output(
+        self, outputs: ModelPredictionOutput
+    ) -> ModelPredictionOutput:
+        return dataclasses.replace(
+            outputs,
+            x=self._postprocess(outputs.x),
+            y_pred=self._postprocess(outputs.y_pred),
+        )
+
+    def _postprocess(self, values: List[str]) -> torch.Tensor:
+        processed = [torch.tensor(int(v) * 2) for v in values]
+        return join_tensors(processed)
+
+
+class AverageMetric(metric.Metric):
+    @property
+    def name(self) -> str:
+        return "average"
+
+    @property
+    def reduce_fx(self) -> str:
+        return "mean"
+
+    def __call__(self, y: torch.Tensor, y_pred: torch.Tensor) -> torch.Tensor:
+        return ((y + y_pred) / 2).mean()
 
 
 dummy_model = Model(
@@ -125,5 +162,7 @@ dummy_task = Task(
         datapipe.FeatureTokenizer(),
     ],
     pad_to=10,
-    postprocessor=DummyPostProcessor(),
+    postprocessors=[postprocessor.DecoderPostProcessor()],
+    metric_preprocessors=[MultiplyPostProcessor()],
+    metrics=[AverageMetric()],
 )

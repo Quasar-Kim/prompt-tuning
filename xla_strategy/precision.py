@@ -39,7 +39,7 @@ class XlaPrecision(Precision):
         use_xm: bool = True,
         **kwargs: Any,
     ) -> Any:
-        import torch_xla.core.xla_model as xm
+        import torch_xla.core.xla_model as xm  # type: ignore
 
         if use_xm:
             return xm.optimizer_step(optimizer, optimizer_args=kwargs)

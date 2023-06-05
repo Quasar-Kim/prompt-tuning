@@ -54,7 +54,7 @@ class XlaPjrtLauncher(_MultiProcessingLauncher):
         trainer: Optional["pl.Trainer"] = None,
         **kwargs: Any,
     ) -> Any:
-        import torch_xla.distributed.xla_multiprocessing as xmp
+        import torch_xla.distributed.xla_multiprocessing as xmp  # type: ignore
 
         return_queue = mp.Manager().Queue()
         spawn_kwargs = {}
@@ -96,7 +96,7 @@ class XlaPjrtLauncher(_MultiProcessingLauncher):
         return_queue: Union[mp.SimpleQueue, queue.Queue],
         global_states: Optional[_GlobalStateSnapshot] = None,
     ) -> None:
-        import torch_xla.core.xla_model as xm
+        import torch_xla.core.xla_model as xm  # type: ignore
 
         log.debug(f"{xm.get_ordinal()}: process started")
 

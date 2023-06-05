@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Optional
+from typing import NamedTuple, cast
 from pathlib import Path
 
 import pandas as pd
@@ -35,6 +35,7 @@ class ParquetDataSource(DataSource):
     def __iter__(self):
         assert self._df is not None, "setup() must be called before __iter__()"
         for row in self._df.itertuples(index=False):
+            row = cast(NamedTuple, row)
             yield row._asdict()
 
     def __len__(self):

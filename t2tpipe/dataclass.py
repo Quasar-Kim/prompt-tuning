@@ -1,4 +1,5 @@
-from typing import Any, List, Dict, Mapping, Optional, TYPE_CHECKING
+from __future__ import annotations
+from typing import Any, List, Dict, Mapping, Optional, TYPE_CHECKING, Union
 from dataclasses import dataclass
 from torch import Tensor
 
@@ -50,22 +51,30 @@ class EncDecSampleForTrain:
 
 
 @dataclass
-class ModelPredictionOutput:
+class DecSampleForPrediction:
     x: Tensor
-    pred: Tensor
+    attention_mask: Optional[Tensor] = None
+
+
+@dataclass
+class DecSampleForTrain:
+    x: Tensor
+    y: Tensor
+    attention_mask: Optional[Tensor] = None
+
+
+@dataclass
+class ModelPredictionOutput:
+    x: Any
+    y_pred: Any
 
 
 @dataclass
 class ModelTrainOutput:
-    y: Tensor
-    y_pred: Tensor
+    x: Any
+    y: Any
+    y_pred: Any
     loss: Tensor
-
-
-@dataclass
-class BatchTextPrediction:
-    x: List[str]
-    pred: List[str]
 
 
 # @dataclass
@@ -84,9 +93,10 @@ class PostProcessedOutput:
 class Task:
     name: str
     source: Mapping[str, DataSource]
-    pipes: List[TransformDataPipe]
+    pipes: List[Union[TransformDataPipe, Slot]]
     pad_to: Optional[int] = None
-    postprocessor: Optional[PostProcessor] = None
+    postprocessors: Optional[List[Union[PostProcessor, Slot]]] = None
+    metric_preprocessors: Optional[List[Union[PostProcessor, Slot]]] = None
     metrics: Optional[List[Metric]] = None
 
 
@@ -98,6 +108,7 @@ class Model:
     tokenizer: Tokenizer
     padder: Optional[TransformDataPipe] = None
     pipes: Optional[Dict[str, TransformDataPipe]] = None
+    postprocessors: Optional[Dict[str, PostProcessor]] = None
 
 
 @dataclass

@@ -14,13 +14,16 @@ from t2tpipe.datapipe import (
     FeatureTokenizer,
     Padder,
     PadderForEncDecModel,
+    PadderForDecModel,
 )
 from t2tpipe.tokenizer import Tokenizer
 from t2tpipe.dataclass import (
     EncodedSampleForTrain,
-    EncDecSampleForTrain,
     EncodedSampleForPrediction,
+    EncDecSampleForTrain,
     EncDecSampleForPrediction,
+    DecSampleForTrain,
+    DecSampleForPrediction,
 )
 
 
@@ -376,3 +379,48 @@ class TestPadderForEncDecModel:
         dp = source.connect(padder)
         with pytest.raises(ValueError, match=r".*pad.*"):
             _ = list(iter(dp))
+
+
+class TestPadderForDecModel:
+    def test_train_output(self, monkeypatch, tokenizer):
+        monkeypatch.setattr(dummy_env.model, "tokenizer", tokenizer)
+        monkeypatch.setattr(dummy_env, "pad_to", 5)
+
+        sample = DecSampleForTrain(
+            x=torch.tensor([1, 2, 3]),
+            y=torch.tensor([4, 5, 6]),
+        )
+        source = IterableDataSource([sample])
+        source.setup(dummy_env)
+        padder = PadderForDecModel()
+        padder.setup(dummy_env)
+        dp = source.connect(padder)
+        out = list(iter(dp))
+        assert dataclass_equal(
+            out[0],
+            DecSampleForTrain(
+                x=torch.tensor([1, 2, 3, 0, 0]),
+                y=torch.tensor([4, 5, 6, 0, 0]),
+                attention_mask=torch.tensor([1, 1, 1, 0, 0]),
+            ),
+        )
+
+    def test_prediction_output(self, monkeypatch, tokenizer):
+        monkeypatch.setattr(dummy_env.model, "tokenizer", tokenizer)
+        monkeypatch.setattr(dummy_env, "pad_to", 5)
+        monkeypatch.setattr(dummy_env, "prediction", True)
+
+        sample = DecSampleForPrediction(x=torch.tensor([1, 2, 3]))
+        source = IterableDataSource([sample])
+        source.setup(dummy_env)
+        padder = PadderForDecModel()
+        padder.setup(dummy_env)
+        dp = source.connect(padder)
+        out = list(iter(dp))
+        assert dataclass_equal(
+            out[0],
+            DecSampleForPrediction(
+                x=torch.tensor([1, 2, 3, 0, 0]),
+                attention_mask=torch.tensor([1, 1, 1, 0, 0]),
+            ),
+        )
