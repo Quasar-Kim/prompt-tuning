@@ -65,12 +65,14 @@ nsmc = Task(
                 }
             }
         ),
+        Slot("prefix_adder"),
         datapipe.FeatureTokenizer(),
     ],
     pad_to=128,
     postprocessors=[
-        Slot("before_decoder"),
         postprocessor.DecoderPostProcessor(),
+        Slot("lm_output_slicer"),
+        Slot("prefix_remover"),
         postprocessor.ClassificationPostProcessor(
             {
                 "부정": 0,
