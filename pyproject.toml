@@ -20,7 +20,7 @@ sentencepiece = "^0.1.98"
 torchdata = "^0.6.0"
 peft = "^0.3.0"
 torch = "2.0.0"
-lightning = {version = "2.0.2", extras = ["extra"]}
+lightning = {git = "https://github.com/lightning-ai/lightning.git", rev = "e2986fa"}
 torchvision = "0.15.1"
 prettyprinter = "^0.18.0"
 
@@ -41,6 +41,8 @@ tensorboard = "2.12"
 rich = "^13.3.5"
 black = "^23.3.0"
 pyright = "^1.1.311"
+pytest-cases = "^3.6.14"
+pre-commit = "^3.3.2"
 
 [tool.poetry.group.xla]
 optional = true

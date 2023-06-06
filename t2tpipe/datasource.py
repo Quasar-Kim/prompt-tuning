@@ -1,6 +1,6 @@
 from abc import abstractmethod
-from typing import NamedTuple, cast
 from pathlib import Path
+from typing import NamedTuple, cast
 
 import pandas as pd
 

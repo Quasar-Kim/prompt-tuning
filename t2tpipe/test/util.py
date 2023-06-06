@@ -1,13 +1,13 @@
-import torch
-
 from dataclasses import asdict
 from typing import Union
 
-from t2tpipe.dataclass import Env, ModelPredictionOutput, Task, Model
+import torch
+
+from t2tpipe.base import BaseLightningModule
+from t2tpipe.dataclass import Env, Model, ModelPredictionOutput, Task
+from t2tpipe.datamodule import T2tPipeDataModule
 from t2tpipe.datasource import IterableDataSource
 from t2tpipe.feature_converter import NoopFeatureConverter
-from t2tpipe.base import BaseLightningModule
-from t2tpipe.datamodule import T2tPipeDataModule
 from t2tpipe.tokenizer import Tokenizer
 
 

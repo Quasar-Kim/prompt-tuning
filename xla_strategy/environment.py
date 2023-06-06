@@ -13,8 +13,10 @@
 # limitations under the License.
 
 import logging
+
 from lightning.fabric.plugins.environments.cluster_environment import ClusterEnvironment
 from lightning.fabric.utilities.exceptions import MisconfigurationException
+
 from xla_strategy.accelerator import XlaPjrtAccelerator
 
 log = logging.getLogger(__name__)

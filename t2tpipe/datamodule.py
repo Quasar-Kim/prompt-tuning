@@ -1,11 +1,11 @@
-from typing import Optional, Callable, List
+from copy import copy
 from logging import Logger
-import dataclasses
-import copy
+from typing import Callable, List, Optional
 
-from torch.utils.data import DataLoader, default_collate
-from torch.utils.data import IterDataPipe as TorchIterDataPipe
 from lightning.pytorch import LightningDataModule
+from torch.utils.data import DataLoader
+from torch.utils.data import IterDataPipe as TorchIterDataPipe
+from torch.utils.data import default_collate
 
 from t2tpipe.dataclass import Env
 from t2tpipe.util import collate_dataclass
@@ -53,7 +53,7 @@ class T2tPipeDataModule(LightningDataModule):
 
     def _build_datapipe(self, stage: str) -> TorchIterDataPipe:
         assert stage in self.env.task.source, f"No data source for stage {stage}"
-        dp = self.env.task.source[stage]
+        dp = copy(self.env.task.source[stage])
         dp.setup(self.env)
 
         transform_pipes = [*self.env.task.pipes, self.env.model.feature_converter]
@@ -62,11 +62,10 @@ class T2tPipeDataModule(LightningDataModule):
         if padder is not None and self.env.pad_to is not None:
             transform_pipes.append(padder)
 
-        transform_pipes = copy.deepcopy(transform_pipes)
-
         for datapipe in transform_pipes:
-            datapipe.setup(self.env)
-            dp = dp.connect(datapipe)
+            _datapipe = copy(datapipe)
+            _datapipe.setup(self.env)
+            dp = dp.connect(_datapipe)
         return dp
 
     @property

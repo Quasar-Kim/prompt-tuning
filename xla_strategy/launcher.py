@@ -12,23 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
 import queue
 from typing import Any, Callable, Optional, Union
-import logging
-
-import torch.multiprocessing as mp
 
 import lightning.pytorch as pl
-from lightning.pytorch.strategies import ParallelStrategy
+import torch.multiprocessing as mp
 from lightning.fabric.strategies.launchers.xla import _rank_teardown
 from lightning.fabric.utilities.apply_func import move_data_to_device
+from lightning.fabric.utilities.exceptions import MisconfigurationException
+from lightning.pytorch.strategies import ParallelStrategy
 from lightning.pytorch.strategies.launchers.multiprocessing import (
     _GlobalStateSnapshot,
     _MultiProcessingLauncher,
     _WorkerOutput,
 )
-from lightning.fabric.utilities.exceptions import MisconfigurationException
 from lightning.pytorch.trainer.states import TrainerFn
 from lightning_utilities.core.rank_zero import rank_zero_debug
 

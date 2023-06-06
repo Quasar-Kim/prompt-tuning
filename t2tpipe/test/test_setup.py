@@ -1,9 +1,9 @@
 import pytest
 
-from t2tpipe.setup import setup as t2tpipe_setup
-from t2tpipe.demo.dummy import dummy_model, dummy_task
 from t2tpipe.dataclass import Slot
 from t2tpipe.datapipe import Shuffler
+from t2tpipe.demo.dummy import dummy_model, dummy_task
+from t2tpipe.setup import setup as t2tpipe_setup
 
 demo_runtime_config = {
     "num_warmup_epochs": 1,

@@ -1,5 +1,5 @@
-from t2tpipe.test.util import dummy_env
 from t2tpipe.datasource import IterableDataSource, ParquetDataSource
+from t2tpipe.test.util import dummy_env
 
 
 class TestIterableDatasource:

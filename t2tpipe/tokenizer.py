@@ -1,5 +1,5 @@
-from typing import Union, List
 from abc import ABC, abstractmethod
+from typing import List, Union
 
 
 class Tokenizer(ABC):

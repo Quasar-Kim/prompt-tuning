@@ -1,4 +1,5 @@
-from typing import Protocol, TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
+
 from t2tpipe.dataclass import Env
 
 

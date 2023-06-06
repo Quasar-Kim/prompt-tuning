@@ -1,6 +1,6 @@
 from typing import Dict, Protocol
 
-from t2tpipe.dataclass import Task, Model
+from t2tpipe.dataclass import Model, Task
 
 
 class HasName(Protocol):

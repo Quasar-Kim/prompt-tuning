@@ -1,13 +1,12 @@
 import dataclasses
-from typing import TypeVar, Protocol, List, Dict
+from time import perf_counter
+from typing import Dict, List, Protocol, TypeVar
 
 import torch
-from torch.utils.data import default_collate
-
-from time import perf_counter
 from lightning.pytorch import LightningDataModule
 from rich.console import Console
 from rich.table import Table
+from torch.utils.data import default_collate
 
 
 def benchmark_datamodule(datamodule: LightningDataModule):

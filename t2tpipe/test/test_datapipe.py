@@ -1,30 +1,30 @@
 from dataclasses import asdict
 from typing import Union
 
-import torch
 import pytest
+import torch
 
-from t2tpipe.test.util import dummy_env, dataclass_equal
-from t2tpipe.datasource import IterableDataSource
+from t2tpipe.dataclass import (
+    DecSampleForPrediction,
+    DecSampleForTrain,
+    EncDecSampleForPrediction,
+    EncDecSampleForTrain,
+    EncodedSampleForPrediction,
+    EncodedSampleForTrain,
+)
 from t2tpipe.datapipe import (
+    DistributedShardingFilter,
+    FeatureTokenizer,
     Mapper,
     MappingKeyMapper,
     MappingValueMapper,
-    DistributedShardingFilter,
-    FeatureTokenizer,
     Padder,
-    PadderForEncDecModel,
     PadderForDecModel,
+    PadderForEncDecModel,
 )
+from t2tpipe.datasource import IterableDataSource
+from t2tpipe.test.util import dataclass_equal, dummy_env
 from t2tpipe.tokenizer import Tokenizer
-from t2tpipe.dataclass import (
-    EncodedSampleForTrain,
-    EncodedSampleForPrediction,
-    EncDecSampleForTrain,
-    EncDecSampleForPrediction,
-    DecSampleForTrain,
-    DecSampleForPrediction,
-)
 
 
 def test_mapper():

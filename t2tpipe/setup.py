@@ -1,11 +1,11 @@
-from typing import Dict, Any, Union, List, overload
 import dataclasses
 from copy import copy
+from typing import Any, Dict, List, Union, overload
 
-from t2tpipe.dataclass import Task, Model, Env, Slot
+from t2tpipe.dataclass import Env, Model, Slot, Task
 from t2tpipe.datamodule import T2tPipeDataModule
-from t2tpipe.postprocessor import PostProcessor
 from t2tpipe.datapipe import TransformDataPipe
+from t2tpipe.postprocessor import PostProcessor
 
 
 def setup(

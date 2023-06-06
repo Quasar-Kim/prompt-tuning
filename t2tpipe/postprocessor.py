@@ -1,13 +1,13 @@
-from abc import ABC, abstractmethod
-from typing import Any, Dict, Union, List, TypeVar, cast
 import dataclasses
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, TypeVar, Union, cast
 
 import torch
 from torch import Tensor
 
+from t2tpipe.dataclass import ModelPredictionOutput, ModelTrainOutput
 from t2tpipe.mixin import SetupMixin
 from t2tpipe.util import join_tensors
-from t2tpipe.dataclass import ModelTrainOutput, ModelPredictionOutput
 
 ModelOutput = Union[ModelTrainOutput, ModelPredictionOutput]
 
@@ -48,7 +48,41 @@ class DecoderPostProcessor(PostProcessor):
         return decoded
 
 
-class ClassificationPostProcessor(PostProcessor):
+class MappingPostProcessor(PostProcessor):
+    def __call__(self, outputs: _MODEL_OUTPUT_T) -> _MODEL_OUTPUT_T:
+        if self._env.prediction:
+            assert isinstance(outputs, ModelPredictionOutput)
+            return self._process_prediction_output(outputs)
+        assert isinstance(outputs, ModelTrainOutput)
+        return self._process_train_output(outputs)
+
+    def _process_train_output(self, outputs: ModelTrainOutput):
+        return dataclasses.replace(
+            outputs,
+            y=self._map_over_key(outputs, "y"),
+            y_pred=self._map_over_key(outputs, "y_pred"),
+        )
+
+    def _process_prediction_output(self, outputs: ModelPredictionOutput):
+        return dataclasses.replace(
+            outputs,
+            x=self._map_over_key(outputs, "x"),
+            y_pred=self._map_over_key(outputs, "y_pred"),
+        )
+
+    def _map_over_key(self, outputs: ModelOutput, key: str) -> List[Any]:
+        values = getattr(outputs, key)
+        mapped = []
+        for value in values:
+            mapped.append(self._map(value, key))
+        return mapped
+
+    @abstractmethod
+    def _map(self, outputs: ModelOutput, key: str) -> Any:
+        pass
+
+
+class ClassificationPostProcessor(MappingPostProcessor):
     _label2id: Dict[str, Dict[str, int]]
     _unk_id: int
 
@@ -64,45 +98,37 @@ class ClassificationPostProcessor(PostProcessor):
             self._label2id = label2id
         self._unk_id = unk_id
 
-    def __call__(self, outputs: _MODEL_OUTPUT_T) -> _MODEL_OUTPUT_T:
-        if self._env.prediction:
-            assert isinstance(outputs, ModelPredictionOutput)
-            return self._process_prediction_output(outputs)
-        assert isinstance(outputs, ModelTrainOutput)
-        return self._process_train_output(outputs)
-
-    def _process_train_output(self, outputs: ModelTrainOutput):
-        return dataclasses.replace(
-            outputs,
-            y=self._map(outputs, "y"),
-            y_pred=self._map(outputs, "y_pred"),
-        )
-
-    def _process_prediction_output(self, outputs: ModelPredictionOutput):
-        return dataclasses.replace(
-            outputs,
-            x=self._map(outputs, "x"),
-            y_pred=self._map(outputs, "y_pred"),
-        )
-
-    def _map(self, outputs: ModelOutput, key: str) -> List[int]:
-        labels = getattr(outputs, key)
-        mapped = []
-        for label in labels:
-            try:
-                mapped_label = self._label2id[key][label]
-            except KeyError:
-                mapped_label = self._unk_id
-            mapped.append(mapped_label)
-        return mapped
+    def _map(self, label: str, key: str) -> int:
+        try:
+            mapped = self._label2id[key][label]
+            return mapped
+        except KeyError:
+            return self._unk_id
 
 
-class LMOutputSlicer(PostProcessor):
-    def __call__(self, outputs: _MODEL_OUTPUT_T) -> _MODEL_OUTPUT_T:
-        return dataclasses.replace(
-            outputs,
-            y_pred=self._slice(outputs.x, outputs.y_pred),
-        )
+class LMOutputSlicer(MappingPostProcessor):
+    _output_prefix: str
 
-    def _slice(self, x: Tensor, y_pred: Tensor) -> Tensor:
-        return y_pred[:, x.size(1) :]
+    def __init__(self, output_prefix: str):
+        self._output_prefix = output_prefix
+
+    def _map(self, src: str, key: str):
+        if key not in ["y_pred", "y"]:
+            return src
+        prefix_idx = src.find(self._output_prefix)
+        if prefix_idx == -1:
+            return src
+        sliced = src[prefix_idx + len(self._output_prefix) :]
+        return sliced
+
+
+class PrefixRemover(MappingPostProcessor):
+    x_prefix: str
+    y_prefix: str
+
+    def __init__(self, x_prefix: str, y_prefix: str):
+        self.x_prefix = x_prefix
+        self.y_prefix = y_prefix
+
+    def _map(self, src: str, prefix: str):
+        return src[len(prefix) :] if src.startswith(prefix) else src

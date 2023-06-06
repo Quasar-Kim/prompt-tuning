@@ -1,6 +1,8 @@
 from __future__ import annotations
-from typing import Any, List, Dict, Mapping, Optional, TYPE_CHECKING, Union
+
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union
+
 from torch import Tensor
 
 if TYPE_CHECKING:

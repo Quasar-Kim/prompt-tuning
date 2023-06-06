@@ -5,7 +5,7 @@ if ! command -v "python3.8" >/dev/null 2>&1; then
         sudo apt-get install -y python3.8
     else
         apt-get install -y python3.8
-    fi   
+    fi
 fi
 
 # install dependencies

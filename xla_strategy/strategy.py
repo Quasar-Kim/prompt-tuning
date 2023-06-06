@@ -14,47 +14,45 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import io
-import os
-import logging
 import contextlib
-from pathlib import Path
-from typing import Any, Dict, Optional, Union, TYPE_CHECKING
+import io
+import logging
+import os
 from collections import OrderedDict
-
-import torch
-from torch import Tensor
-from torch.nn import Module
-from torch.distributed import ReduceOp
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 import lightning.pytorch as pl
+import torch
 from lightning.fabric.plugins import CheckpointIO, XLACheckpointIO
+from lightning.fabric.utilities.exceptions import MisconfigurationException
 from lightning.fabric.utilities.optimizer import _optimizers_to_device
 from lightning.fabric.utilities.types import _PATH
-from lightning.fabric.utilities.exceptions import MisconfigurationException
 from lightning.pytorch.overrides.base import _LightningModuleWrapperBase
 from lightning.pytorch.plugins.io.wrapper import _WrappingCheckpointIO
 from lightning.pytorch.plugins.precision import PrecisionPlugin
-from lightning.pytorch.strategies import DDPStrategy
-from lightning.pytorch.strategies import SingleDeviceStrategy
+from lightning.pytorch.strategies import DDPStrategy, SingleDeviceStrategy
 from lightning.pytorch.strategies.strategy import TBroadcast
 from lightning.pytorch.trainer.states import TrainerFn
+from lightning.pytorch.utilities.model_helpers import is_overridden
 from lightning.pytorch.utilities.parameter_tying import (
     find_shared_parameters,
     set_shared_parameters,
 )
-from lightning.pytorch.utilities.model_helpers import is_overridden
 from lightning.pytorch.utilities.types import STEP_OUTPUT
 from lightning_utilities.core.rank_zero import (
-    rank_zero_only,
     rank_zero_info,
+    rank_zero_only,
     rank_zero_warn,
 )
+from torch import Tensor
+from torch.distributed import ReduceOp
+from torch.nn import Module
 
 from xla_strategy.accelerator import XlaPjrtAccelerator
+from xla_strategy.environment import XlaPjrtEnvironment
 from xla_strategy.launcher import XlaPjrtLauncher
 from xla_strategy.precision import XlaPrecision
-from xla_strategy.environment import XlaPjrtEnvironment
 from xla_strategy.util import suppress_stdout
 
 if TYPE_CHECKING and XlaPjrtAccelerator.is_available():

@@ -1,16 +1,16 @@
 import torch
 
 from t2tpipe.dataclass import (
-    EncodedSampleForTrain,
-    EncodedSampleForPrediction,
-    EncDecSampleForTrain,
-    EncDecSampleForPrediction,
-    DecSampleForTrain,
     DecSampleForPrediction,
+    DecSampleForTrain,
+    EncDecSampleForPrediction,
+    EncDecSampleForTrain,
+    EncodedSampleForPrediction,
+    EncodedSampleForTrain,
 )
 from t2tpipe.datasource import IterableDataSource
-from t2tpipe.feature_converter import EncDecFeatureConverter, DecFeatureConverter
-from t2tpipe.test.util import dummy_env, dataclass_equal
+from t2tpipe.feature_converter import DecFeatureConverter, EncDecFeatureConverter
+from t2tpipe.test.util import dataclass_equal, dummy_env
 
 
 class TestEncDecFeatureConverter:

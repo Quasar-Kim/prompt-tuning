@@ -1,7 +1,7 @@
 import t2tpipe
+from model import ket5_small
 from t2tpipe.util import benchmark_datamodule
 from task import khs
-from model import ket5_small
 
 model, dm = t2tpipe.setup(
     model=ket5_small,

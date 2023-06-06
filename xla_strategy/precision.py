@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Literal
-import torch
 import os
-from torch import Tensor
+from typing import Any, Literal
+
+import torch
 from lightning.fabric.plugins.precision.precision import Precision
-from lightning.fabric.utilities.types import Optimizable
 from lightning.fabric.plugins.precision.utils import _convert_fp_tensor
 from lightning.fabric.utilities.exceptions import MisconfigurationException
+from lightning.fabric.utilities.types import Optimizable
 from lightning_utilities.core.apply_func import apply_to_collection
+from torch import Tensor
 
 from xla_strategy.accelerator import XlaPjrtAccelerator
 

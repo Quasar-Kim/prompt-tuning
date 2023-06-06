@@ -10,7 +10,13 @@
             "request": "launch",
             "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
-            "args": ["fit", "--config", "config.env.cpu_dev", "--config", "config.dummy"],
+            "args": [
+                "fit",
+                "--config",
+                "config.env.cpu_dev",
+                "--config",
+                "config.dummy"
+            ],
             "justMyCode": false
         },
         {
@@ -19,7 +25,30 @@
             "request": "launch",
             "program": "${workspaceFolder}/cli.py",
             "console": "integratedTerminal",
-            "args": ["predict", "--config", "config.env.cpu_dev", "--config", "config.dummy"],
+            "args": [
+                "predict",
+                "--config",
+                "config.env.cpu_dev",
+                "--config",
+                "config.dummy"
+            ],
+            "justMyCode": false
+        },
+        {
+            "name": "CLI - fit kogpt2",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/cli.py",
+            "console": "integratedTerminal",
+            "args": [
+                "fit",
+                "--config",
+                "config.env.cpu_dev",
+                "--config",
+                "config.task.khs",
+                "--config",
+                "config.kogpt2_khs_dev"
+            ],
             "justMyCode": false
         },
         {
@@ -39,7 +68,8 @@
             "type": "python",
             "request": "launch",
             "module": "pytest",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "justMyCode": false
         }
     ]
 }

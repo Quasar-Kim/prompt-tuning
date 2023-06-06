@@ -1,4 +1,4 @@
-from t2tpipe import datasource, datapipe, postprocessor, metric, Task
+from t2tpipe import Task, datapipe, datasource, metric, postprocessor
 from t2tpipe.dataclass import Slot
 
 khs = Task(
@@ -6,6 +6,7 @@ khs = Task(
     source={
         "train": datasource.ParquetDataSource("data/khs/train.parquet"),
         "validation": datasource.ParquetDataSource("data/khs/validation.parquet"),
+        "prediction": datasource.ParquetDataSource("data/khs/prediction.parquet"),
     },
     pipes=[
         datapipe.Shuffler(),
@@ -21,12 +22,14 @@ khs = Task(
                 }
             }
         ),
+        Slot("prefix_adder"),
         datapipe.FeatureTokenizer(),
     ],
     pad_to=128,
     postprocessors=[
-        Slot("before_decoder"),
         postprocessor.DecoderPostProcessor(),
+        Slot("lm_output_slicer"),
+        Slot("prefix_remover"),
         postprocessor.ClassificationPostProcessor(
             {
                 "혐오": 2,
@@ -62,6 +65,7 @@ nsmc = Task(
                 }
             }
         ),
+        datapipe.FeatureTokenizer(),
     ],
     pad_to=128,
     postprocessors=[

@@ -13,10 +13,11 @@
 # limitations under the License.
 
 import os
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
 import torch
-from lightning.pytorch.accelerators.accelerator import Accelerator
 from lightning.fabric.utilities.exceptions import MisconfigurationException
+from lightning.pytorch.accelerators.accelerator import Accelerator
 
 
 class XlaPjrtAccelerator(Accelerator):

@@ -1,14 +1,14 @@
-from abc import ABC, abstractmethod
-from typing import Any, List, Tuple, Union, overload, TypeVar, cast, Dict, Optional
 import dataclasses
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional, Tuple, TypeVar, Union, cast, overload
 
 import torch
-from torch import Tensor
 from lightning.pytorch import LightningModule
+from torch import Tensor
 
-from t2tpipe.dataclass import ModelTrainOutput, ModelPredictionOutput, Env
+from t2tpipe.dataclass import Env, ModelPredictionOutput, ModelTrainOutput
 from t2tpipe.postprocessor import PostProcessor
-from t2tpipe.util import join_tensor_dataclass, dataclass_to_cpu
+from t2tpipe.util import dataclass_to_cpu, join_tensor_dataclass
 
 _MODEL_OUTPUT_T = TypeVar("_MODEL_OUTPUT_T", ModelTrainOutput, ModelPredictionOutput)
 
@@ -96,8 +96,8 @@ class BaseLightningModule(LightningModule, ABC):
         self._prediction_outputs.clear()
 
     def _postprocess_outputs(self, outputs: List[_MODEL_OUTPUT_T]) -> _MODEL_OUTPUT_T:
-        concatenated_otputs = join_tensor_dataclass(outputs)  # (S, N)
-        cpu_outputs = dataclass_to_cpu(concatenated_otputs)
+        concatenated_outputs = join_tensor_dataclass(outputs)  # (S, N)
+        cpu_outputs = dataclass_to_cpu(concatenated_outputs)
         if self._env.task.postprocessors is None:
             return cpu_outputs
         postprocessed_outputs = self._apply_processors_to_outputs(
@@ -128,7 +128,9 @@ class BaseLightningModule(LightningModule, ABC):
         loss = losses.mean()
         self.log(f"{stage}/loss", loss, sync_dist=True, prog_bar=True)
 
-    def _compute_and_log_metrics(self, ys: Tensor, y_preds: Tensor, stage: str):
+    def _compute_and_log_metrics(self, ys: Any, y_preds: Any, stage: str):
+        # ensure ys and y_preds are tensor
+        ys, y_preds = torch.tensor(ys), torch.tensor(y_preds)
         metrics = self._env.task.metrics
         assert metrics is not None
         for metric in metrics:

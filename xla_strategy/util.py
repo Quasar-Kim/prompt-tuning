@@ -1,5 +1,6 @@
+import os
+import sys
 from contextlib import contextmanager
-import sys, os
 
 
 # https://stackoverflow.com/a/25061573

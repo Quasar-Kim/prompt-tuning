@@ -14,18 +14,18 @@ Example config file:
         return cfg
 """
 
-from typing import List, Dict, Optional
 import argparse
 import importlib
 import json
 from pathlib import Path
+from typing import Dict, List, Optional
 
-from prettyprinter import cpprint
-from lightning.pytorch import Trainer, seed_everything
 import pandas as pd
+from lightning.pytorch import Trainer, seed_everything
+from prettyprinter import cpprint
 
 import t2tpipe
-from t2tpipe.dataclass import Task, Model, ModelPredictionOutput
+from t2tpipe.dataclass import Model, ModelPredictionOutput, Task
 
 
 def parse_arguments():

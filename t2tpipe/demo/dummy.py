@@ -1,26 +1,26 @@
-from typing import Any, List, Union, TypeVar
 import dataclasses
+from typing import Any, List, TypeVar, Union
 
 import torch
 from torch import nn, optim
 
 from t2tpipe import (
-    datasource,
-    datapipe,
-    postprocessor,
-    metric,
-    feature_converter,
-    Task,
     Model,
+    Task,
+    datapipe,
+    datasource,
+    feature_converter,
+    metric,
+    postprocessor,
 )
 from t2tpipe.base import BaseLightningModule
-from t2tpipe.tokenizer import Tokenizer
 from t2tpipe.dataclass import (
-    EncDecSampleForTrain,
     EncDecSampleForPrediction,
+    EncDecSampleForTrain,
     ModelPredictionOutput,
     ModelTrainOutput,
 )
+from t2tpipe.tokenizer import Tokenizer
 from t2tpipe.type import TextSampleForTrain
 from t2tpipe.util import join_tensors
 

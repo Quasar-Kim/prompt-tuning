@@ -1,8 +1,9 @@
 from __future__ import annotations
+
 import functools
-from itertools import islice
-from typing import Tuple, Dict, Any, Type, Union, cast
 from abc import ABC, abstractmethod
+from itertools import islice
+from typing import Any, Dict, Tuple, Type, Union, cast
 
 import torch
 import torch.distributed as dist
@@ -13,16 +14,16 @@ import torchdata.datapipes.iter as torchdata_pipes
 from torch.utils.data import IterDataPipe as TorchIterDataPipe
 from torch.utils.data.datapipes.iter.sharding import SHARDING_PRIORITIES
 
-from t2tpipe.mixin import SetupMixin
 from t2tpipe.dataclass import (
-    EncodedSampleForTrain,
-    EncodedSampleForPrediction,
-    EncDecSampleForTrain,
-    EncDecSampleForPrediction,
-    DecSampleForTrain,
     DecSampleForPrediction,
+    DecSampleForTrain,
+    EncDecSampleForPrediction,
+    EncDecSampleForTrain,
+    EncodedSampleForPrediction,
+    EncodedSampleForTrain,
 )
-from t2tpipe.type import TextSampleForTrain, TextSampleForPrediction
+from t2tpipe.mixin import SetupMixin
+from t2tpipe.type import TextSampleForPrediction, TextSampleForTrain
 
 
 class DataPipe(ABC, TorchIterDataPipe, SetupMixin):
@@ -358,6 +359,18 @@ class PadderForDecModel(BasePadder):
         return DecSampleForPrediction(x=padded_x, attention_mask=attention_mask)
 
 
-class NoopDataPipe(TransformDataPipe):
-    def __iter__(self):
-        yield from iter(self.source_dp)
+class PrefixAdder(Mapper):
+    x_prefix: str
+    y_prefix: str
+
+    def __init__(self, x_prefix: str, y_prefix: str):
+        super().__init__(fn=self._map)
+        self.x_prefix = x_prefix
+        self.y_prefix = y_prefix
+
+    def _map(self, sample: Dict[str, str]):
+        if "x" in sample:
+            sample["x"] = self.x_prefix + sample["x"]
+        if "y" in sample:
+            sample["y"] = self.y_prefix + sample["y"]
+        return sample

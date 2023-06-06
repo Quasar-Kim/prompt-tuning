@@ -2,15 +2,15 @@ from typing import Optional
 
 import torch
 
-from t2tpipe.datapipe import TransformDataPipe, PadderForEncDecModel, PadderForDecModel
 from t2tpipe.dataclass import (
-    EncDecSampleForTrain,
-    EncDecSampleForPrediction,
-    DecSampleForTrain,
     DecSampleForPrediction,
-    EncodedSampleForTrain,
+    DecSampleForTrain,
+    EncDecSampleForPrediction,
+    EncDecSampleForTrain,
     EncodedSampleForPrediction,
+    EncodedSampleForTrain,
 )
+from t2tpipe.datapipe import PadderForDecModel, PadderForEncDecModel, TransformDataPipe
 
 
 class FeatureConverter(TransformDataPipe):
