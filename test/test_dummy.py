@@ -12,7 +12,7 @@ def _setup(prediction=False):
         model=dummy_model,
         task=dummy_task,
         runtime_config={
-            "batch_size": 64,
+            "batch_size": 16,
             "num_workers": 0,
             "is_gpu": False,
         },

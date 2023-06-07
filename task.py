@@ -68,7 +68,7 @@ nsmc = Task(
         Slot("prefix_adder"),
         datapipe.FeatureTokenizer(),
     ],
-    pad_to=128,
+    pad_to=256,
     postprocessors=[
         postprocessor.DecoderPostProcessor(),
         Slot("lm_output_slicer"),
