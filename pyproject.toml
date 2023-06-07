@@ -20,7 +20,7 @@ sentencepiece = "^0.1.98"
 torchdata = "^0.6.0"
 peft = "^0.3.0"
 torch = "2.0.0"
-lightning = {git = "https://github.com/lightning-ai/lightning.git", rev = "e2986fa"}
+lightning = "2.0.2"
 torchvision = "0.15.1"
 prettyprinter = "^0.18.0"
 

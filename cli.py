@@ -64,6 +64,7 @@ def validate_cfg(cfg: dict):
 
 
 def report_config(parsed_cfg: dict, log_dir: Optional[str]):
+    # TODO: guard distributed
     task_name = parsed_cfg["task"].name
     model_name = parsed_cfg["model"].name
     config_for_reporting = {
