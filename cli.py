@@ -80,7 +80,7 @@ def report_config(parsed_cfg: dict, log_dir: Optional[str]):
         log_path = Path(log_dir) / "config.json"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open("w") as f:
-        json.dump(config_for_reporting, f, indent=4)
+        json.dump(config_for_reporting, f, indent=4, default=str)
 
 
 def run_stage(stage, parsed_cfg: dict, ckpt_path: Optional[str] = None):
